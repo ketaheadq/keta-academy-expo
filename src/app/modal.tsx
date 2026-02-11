@@ -1,0 +1,19 @@
+import { StatusBar } from 'expo-status-bar';
+import { Platform, Text, View } from 'react-native';
+
+export default function ModalScreen() {
+	return (
+		<View className="flex-1 items-center justify-center bg-white p-6">
+			<Text className="mb-4 font-bold text-2xl text-slate-900">Hakkımızda</Text>
+			<View className="my-6 h-px w-4/5 bg-slate-100" />
+
+			<Text className="text-center text-slate-600 leading-relaxed">
+				Keta Akademi, her yaştan öğrenciye en kaliteli eğitim materyallerini sunmayı hedefleyen bir
+				platformdur.
+			</Text>
+
+			{/* Use a light status bar on iOS to account for the black space above the modal */}
+			<StatusBar style={Platform.OS === 'ios' ? 'light' : 'auto'} />
+		</View>
+	);
+}

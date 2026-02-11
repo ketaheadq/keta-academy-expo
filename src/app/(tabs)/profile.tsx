@@ -1,0 +1,52 @@
+import { Bell, ChevronRight, LogOut, Settings, ShieldCheck, User } from 'lucide-react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+
+export default function ProfileScreen() {
+	return (
+		<ScrollView className="flex-1 bg-slate-50">
+			<View className="items-center border-slate-100 border-b bg-white p-6">
+				<View className="mb-4 h-24 w-24 items-center justify-center rounded-full bg-blue-100">
+					<User size={48} color="#2563eb" />
+				</View>
+				<Text className="font-bold text-slate-900 text-xl">Hoş Geldiniz</Text>
+				<Text className="text-slate-500">Giriş yaparak tüm özelliklere erişin</Text>
+
+				<Pressable className="mt-6 rounded-full bg-blue-600 px-8 py-3 transition-transform active:scale-95">
+					<Text className="font-bold text-white">Giriş Yap / Kayıt Ol</Text>
+				</Pressable>
+			</View>
+
+			<View className="mt-6 border-slate-100 border-y bg-white">
+				<ProfileItem icon={<Bell size={20} color="#64748b" />} label="Bildirimler" />
+				<ProfileItem icon={<Settings size={20} color="#64748b" />} label="Ayarlar" />
+				<ProfileItem
+					icon={<ShieldCheck size={20} color="#64748b" />}
+					label="Güvenlik ve Gizlilik"
+				/>
+			</View>
+
+			<View className="mt-6 border-slate-100 border-y bg-white">
+				<ProfileItem
+					icon={<LogOut size={20} color="#dc2626" />}
+					label="Çıkış Yap"
+					labelColor="text-red-500"
+					last
+				/>
+			</View>
+
+			<Text className="mt-8 mb-12 text-center text-slate-400 text-xs">Keta Akademi v1.0.0</Text>
+		</ScrollView>
+	);
+}
+
+function ProfileItem({ icon, label, labelColor = 'text-slate-700', last = false }: any) {
+	return (
+		<Pressable
+			className={`flex-row items-center p-4 active:bg-slate-50 ${last ? '' : 'border-slate-50 border-b'}`}
+		>
+			<View className="mr-3">{icon}</View>
+			<Text className={`flex-1 font-medium ${labelColor}`}>{label}</Text>
+			<ChevronRight size={18} color="#cbd5e1" />
+		</Pressable>
+	);
+}

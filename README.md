@@ -8,8 +8,7 @@ A high-performance, universal mobile application built with **Expo Stack**. This
 * **Routing:** [Expo Router](https://docs.expo.dev/router/introduction/) (File-based, Type-safe)
 * **UI Components:** [Gluestack UI v2](https://gluestack.io/) (Headless components)
 * **Styling:** [NativeWind v4](https://www.nativewind.dev/) (Tailwind CSS for Native)
-* **State Management:** [Zustand](https://github.com/pmndrs/zustand)
-* **Data Fetching:** [TanStack Query v5](https://tanstack.com/query/latest)
+* **State Management:** [Redux Toolkit (RTK) + React Redux]
 * **Media:** `expo-video` for native high-performance playback
 * **Storage:** `expo-secure-store` for encrypted credential persistence
 
@@ -99,6 +98,13 @@ npx expo install --check
 ```bash
 pnpm start --clear
 
+```
+
+**To update**
+```bash
+ncu -u --reject "/^expo|^react-native|react/"
+npx expo install --check
+pnpm install
 ```
 
 ---
