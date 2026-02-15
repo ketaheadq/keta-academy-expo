@@ -4,35 +4,35 @@ import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react
 import { getBlogs } from '@/lib/strapi';
 
 export default function BlogScreen() {
-	const [blogs, setBlogs] = useState<any[]>([]);
-	const [loading, setLoading] = useState(true);
+	// const [blogs, setBlogs] = useState<any[]>([]);
+	// const [loading, setLoading] = useState(true);
 
-	useEffect(() => {
-		async function loadBlogs() {
-			try {
-				const data = await getBlogs();
-				setBlogs(data);
-			} catch (error) {
-				console.error(error);
-			} finally {
-				setLoading(false);
-			}
-		}
+	// useEffect(() => {
+	// 	async function loadBlogs() {
+	// 		try {
+	// 			const data = await getBlogs();
+	// 			setBlogs(data);
+	// 		} catch (error) {
+	// 			console.error(error);
+	// 		} finally {
+	// 			setLoading(false);
+	// 		}
+	// 	}
 
-		loadBlogs();
-	}, []);
+	// 	loadBlogs();
+	// }, []);
 
-	if (loading) {
-		return (
-			<View className="flex-1 items-center justify-center bg-white">
-				<ActivityIndicator size="large" color="#2563eb" />
-			</View>
-		);
-	}
+	// if (loading) {
+	// 	return (
+	// 		<View className="flex-1 items-center justify-center bg-white">
+	// 			<ActivityIndicator size="large" color="#2563eb" />
+	// 		</View>
+	// 	);
+	// }
 
 	return (
 		<View className="flex-1 bg-white">
-			<FlatList
+			{/* <FlatList
 				data={blogs}
 				keyExtractor={(item) => item.id.toString()}
 				contentContainerStyle={{ padding: 16 }}
@@ -60,7 +60,8 @@ export default function BlogScreen() {
 						</View>
 					</Pressable>
 				)}
-			/>
+			/> */}
+			<Text>BlogScreen</Text>
 		</View>
 	);
 }
