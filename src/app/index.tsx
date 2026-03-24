@@ -11,7 +11,6 @@ import {
 	StarIcon,
 	SunIcon,
 } from 'lucide-react-native';
-import * as React from 'react';
 import { Image, Pressable, ScrollView, View } from 'react-native';
 import { Uniwind, useUniwind } from 'uniwind';
 import { Button } from '@/components/ui/button';
@@ -147,12 +146,12 @@ export default function Screen() {
 
 				{/* Hero Section */}
 				<View className="mb-8 px-5">
-					<View className="relative overflow-hidden rounded-[32px] bg-primary p-7 shadow-primary/30 shadow-xl">
+					<View className="relative overflow-hidden rounded-4xl bg-primary p-7 shadow-primary/30 shadow-xl">
 						<View className="z-10 gap-2">
 							<Text className="font-extrabold text-3xl text-primary-foreground leading-tight">
 								Unlock Your{'\n'}Potential
 							</Text>
-							<Text className="mt-1 max-w-[210px] font-medium text-base text-primary-foreground/90">
+							<Text className="mt-1 max-w-52.5 font-medium text-base text-primary-foreground/90">
 								Access premium courses and prep for your success.
 							</Text>
 							<Button
@@ -184,7 +183,7 @@ export default function Screen() {
 						{CATEGORIES.map((cat) => (
 							<Pressable
 								key={cat.id}
-								className="w-32 items-center gap-3 rounded-[24px] border border-border/60 bg-card p-5 shadow-black/5 shadow-xl transition-all active:scale-95"
+								className="w-32 items-center gap-3 rounded-3xl border border-border/60 bg-card p-5 shadow-black/5 shadow-xl transition-all active:scale-95"
 							>
 								<View
 									className={`${cat.color} size-14 items-center justify-center rounded-2xl shadow-lg ${cat.shadow}`}
@@ -215,7 +214,7 @@ export default function Screen() {
 						{FEATURED_COURSES.map((course) => (
 							<View
 								key={course.id}
-								className="w-[300px] overflow-hidden rounded-[32px] border border-border/60 bg-card shadow-2xl shadow-black/5"
+								className="w-75 overflow-hidden rounded-4xl border border-border/60 bg-card shadow-2xl shadow-black/5"
 							>
 								<Image source={{ uri: course.image }} className="h-44 w-full" />
 								<View className="gap-3 p-5">

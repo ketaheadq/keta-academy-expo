@@ -1,7 +1,4 @@
-import { Calendar, ChevronRight } from 'lucide-react-native';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Pressable, Text, View } from 'react-native';
-import { getBlogs } from '@/lib/strapi';
+import { Text, View } from 'react-native';
 
 export default function BlogScreen() {
 	// const [blogs, setBlogs] = useState<any[]>([]);
