@@ -25,6 +25,20 @@ export async function getCourses() {
 	return response.data;
 }
 
+export interface CourseProgress {
+	completedLessons: number;
+	totalLessons: number;
+	lastQuizPercentage: number | null;
+}
+
+export async function getCourseProgress(documentId: string, jwt: string): Promise<CourseProgress> {
+	const response = await fetch(`${STRAPI_URL}/api/learning/course-progress/${encodeURIComponent(documentId)}`, {
+		headers: { Authorization: `Bearer ${jwt}` },
+	});
+	if (!response.ok) throw new Error(`Course progress request failed: ${response.status}`);
+	return (await response.json()).data;
+}
+
 export async function getBlogs() {
 	const response = await fetchStrapiData<any>('blogs?populate=*');
 	return response.data;
