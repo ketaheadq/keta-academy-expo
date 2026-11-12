@@ -26,6 +26,7 @@ export async function getCourses() {
 }
 
 export interface CourseProgress {
+	status: 'not_started' | 'in_progress' | 'completed';
 	completedLessons: number;
 	totalLessons: number;
 	lastQuizPercentage: number | null;

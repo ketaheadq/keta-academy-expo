@@ -54,6 +54,9 @@ export default function CoursesScreen() {
 				<View className="gap-2 rounded-xl border border-border bg-card p-4">
 					<Text className="font-bold text-foreground text-lg">{item.title}</Text>
 					<Text className="text-muted-foreground">{item.description}</Text>
+					<Text className={item.progress?.status === 'completed' ? 'font-semibold text-green-700' : 'font-semibold text-foreground'}>
+						{item.progress?.status === 'completed' ? 'Bitti' : item.progress?.status === 'in_progress' ? 'Devam Et' : 'Kursa Başla'}
+					</Text>
 					{item.progress && (
 						<Text className="text-foreground">
 							{item.progress.completedLessons} / {item.progress.totalLessons} ders tamamlandı
