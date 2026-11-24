@@ -23,6 +23,19 @@ export const unstable_settings = {
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
+const HEADER_STYLE = {
+	backgroundColor: '#ffffff',
+	borderBottomWidth: 1,
+	borderBottomColor: '#f1f5f9',
+	elevation: 0,
+	shadowOpacity: 0,
+} as const;
+
+const HEADER_TITLE_STYLE = {
+	fontWeight: 'bold' as const,
+	color: '#0f172a',
+};
+
 export default function RootLayout() {
 	const { setAuth, refreshUser } = useAuthStore();
 	const router = useRouter();
@@ -54,7 +67,14 @@ export default function RootLayout() {
 	return (
 		<ThemeProvider value={NAV_THEME[theme ?? 'light']}>
 			<StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
-			<Stack>
+			<Stack
+				screenOptions={{
+					headerStyle: HEADER_STYLE,
+					headerTitleStyle: HEADER_TITLE_STYLE,
+					headerTintColor: '#2563eb',
+					contentStyle: { backgroundColor: '#f8fafc' },
+				}}
+			>
 				<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
 				<Stack.Screen name="modal" options={{ presentation: 'modal' }} />
 			</Stack>

@@ -1,64 +1,90 @@
-import { Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { BookText } from 'lucide-react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { FlatList, Text, TextInput, View } from 'react-native';
+import { BlogCard } from '@/components/shared/cards/blog-card';
+import { EmptyState, LoadingState } from '@/components/shared/states';
+import { getBlogs, type StrapiBlog } from '@/lib/strapi';
+import { normalizeTurkish } from '@/lib/utils';
 
 export default function BlogScreen() {
-	// const [blogs, setBlogs] = useState<any[]>([]);
-	// const [loading, setLoading] = useState(true);
+	const router = useRouter();
+	const [blogs, setBlogs] = useState<StrapiBlog[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [failed, setFailed] = useState(false);
+	const [query, setQuery] = useState('');
 
-	// useEffect(() => {
-	// 	async function loadBlogs() {
-	// 		try {
-	// 			const data = await getBlogs();
-	// 			setBlogs(data);
-	// 		} catch (error) {
-	// 			console.error(error);
-	// 		} finally {
-	// 			setLoading(false);
-	// 		}
-	// 	}
+	const load = useCallback(() => {
+		setLoading(true);
+		setFailed(false);
+		getBlogs()
+			.then((result) => {
+				setBlogs(result);
+				setFailed(false);
+			})
+			.catch(() => setFailed(true))
+			.finally(() => setLoading(false));
+	}, []);
 
-	// 	loadBlogs();
-	// }, []);
+	useEffect(load, [load]);
 
-	// if (loading) {
-	// 	return (
-	// 		<View className="flex-1 items-center justify-center bg-white">
-	// 			<ActivityIndicator size="large" color="#2563eb" />
-	// 		</View>
-	// 	);
-	// }
+	const filtered = useMemo(() => {
+		const needle = normalizeTurkish(query.trim());
+		if (!needle) return blogs;
+		return blogs.filter((blog) =>
+			normalizeTurkish(`${blog.title} ${blog.category ?? ''}`).includes(needle),
+		);
+	}, [blogs, query]);
+
+	if (loading) return <LoadingState label="Blog yazıları yükleniyor..." />;
 
 	return (
-		<View className="flex-1 bg-white">
-			{/* <FlatList
-				data={blogs}
-				keyExtractor={(item) => item.id.toString()}
-				contentContainerStyle={{ padding: 16 }}
-				renderItem={({ item }) => (
-					<Pressable className="mb-4 flex-row overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm transition-colors active:bg-slate-50">
-						{item.image?.url && (
-							<Image
-								source={{ uri: item.image.url }}
-								className="m-3 h-24 w-24 rounded-xl bg-slate-100"
-							/>
-						)}
-						<View className="flex-1 justify-center p-3">
-							<Text className="mb-1 font-bold text-base text-slate-900" numberOfLines={2}>
-								{item.title}
-							</Text>
-							<View className="flex-row items-center">
-								<Calendar size={12} color="#64748b" />
-								<Text className="ml-1 text-slate-500 text-xs">
-									{new Date(item.publishedAt).toLocaleDateString('tr-TR')}
-								</Text>
-							</View>
-						</View>
-						<View className="items-center justify-center pr-4">
-							<ChevronRight size={20} color="#cbd5e1" />
-						</View>
-					</Pressable>
-				)}
-			/> */}
-			<Text>BlogScreen</Text>
-		</View>
+		<FlatList
+			className="flex-1 bg-slate-50"
+			data={filtered}
+			keyExtractor={(blog) => blog.documentId}
+			contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
+			ListHeaderComponent={
+				<View className="mb-2 gap-3">
+					<Text className="font-extrabold text-2xl text-slate-900">Blog</Text>
+					<View className="flex-row items-center rounded-xl border border-slate-200 bg-white px-3">
+						<TextInput
+							value={query}
+							onChangeText={setQuery}
+							placeholder="Ara..."
+							placeholderTextColor="#94a3b8"
+							className="h-11 flex-1 text-slate-900 text-sm"
+						/>
+					</View>
+				</View>
+			}
+			ListEmptyComponent={
+				failed ? (
+					<EmptyState
+						icon={BookText}
+						title="Blog yazıları yüklenemedi"
+						description="Lütfen bağlantını kontrol edip tekrar dene."
+						actionLabel="Tekrar Dene"
+						onAction={load}
+					/>
+				) : (
+					<EmptyState
+						icon={BookText}
+						title="Blog yazısı bulunamadı"
+						description="Aradığınız kriterlere uygun blog yazısı bulunamadı."
+					/>
+				)
+			}
+			renderItem={({ item }) => (
+				<BlogCard
+					blog={item}
+					onPress={() => {
+						const pageSlug = item.page?.slug;
+						if (pageSlug) router.push(`/sayfalar/${pageSlug}/${item.slug}`);
+						else router.push('/sayfalar');
+					}}
+				/>
+			)}
+		/>
 	);
 }

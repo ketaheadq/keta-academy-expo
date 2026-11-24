@@ -1,8 +1,7 @@
 // Strapi authentication utilities for Mobile
 import * as Linking from 'expo-linking';
 import * as WebBrowser from 'expo-web-browser';
-
-const STRAPI_URL = process.env.EXPO_PUBLIC_STRAPI_URL;
+import { STRAPI_URL } from '@/lib/strapi';
 
 export interface StrapiUser {
 	id: number;
@@ -31,10 +30,6 @@ export interface AuthError {
 }
 
 export function getGoogleAuthUrl(): string {
-	if (!STRAPI_URL) {
-		throw new Error('EXPO_PUBLIC_STRAPI_URL environment variable is required');
-	}
-
 	// For mobile, we might need to pass a redirect URI that points back to the app
 	const redirectUri = Linking.createURL('/auth-callback');
 	return `${STRAPI_URL}/api/auth/google?mobile=true&redirectUri=${encodeURIComponent(redirectUri)}`;
@@ -51,8 +46,6 @@ export async function signInWithGoogle() {
 
 export async function getCurrentUser(jwt: string): Promise<StrapiUser | null> {
 	try {
-		if (!STRAPI_URL) return null;
-
 		const response = await fetch(`${STRAPI_URL}/api/users/me`, {
 			headers: {
 				Authorization: `Bearer ${jwt}`,
