@@ -40,6 +40,9 @@ const STEPS = [
 	},
 ];
 
+// Stable identity so the memoised lists below don't recompute on every render while loading.
+const NO_TUTORS: StrapiTutoringProfile[] = [];
+
 export default function TutoringListScreen() {
 	const router = useRouter();
 	const scrollRef = useRef<ScrollView>(null);
@@ -59,7 +62,7 @@ export default function TutoringListScreen() {
 		return { tutors, ratings, fallbackPhone: contact?.phone || '05451304287' };
 	}, []);
 
-	const tutors = data?.tutors ?? [];
+	const tutors = data?.tutors ?? NO_TUTORS;
 	const ratings = data?.ratings;
 	const fallbackPhone = data?.fallbackPhone ?? null;
 

@@ -19,7 +19,7 @@ export interface StrapiRichTextNode {
 /** Generic Strapi rich-text block as returned by the REST API. */
 export interface StrapiBlock {
 	type: string;
-	children: Array<{ text: string; type?: string; [key: string]: any }>;
+	children: { text: string; type?: string; [key: string]: any }[];
 	[key: string]: any;
 }
 

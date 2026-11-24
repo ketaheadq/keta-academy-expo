@@ -57,10 +57,6 @@ export default function DenemeSinavlariScreen() {
 			<Stack.Screen options={{ title: 'Deneme Sınavları' }} />
 			{loading ? (
 				<LoadingState />
-			) : denemeler.length === 0 ? (
-				<View className="flex-1 items-center justify-center bg-slate-50">
-					<EmptyState title="Henüz deneme sınavı yok" />
-				</View>
 			) : (
 				<ScrollView className="flex-1 bg-slate-50" contentContainerStyle={{ padding: 16, gap: 16 }}>
 					<View>
@@ -73,49 +69,55 @@ export default function DenemeSinavlariScreen() {
 						</Text>
 					</View>
 
-					{options.length > 2 ? (
-						<View className="flex-row flex-wrap gap-2">
-							{options.map((option) => {
-								const active = isActive(option.filter);
-								return (
-									<Pressable
-										key={option.label}
-										onPress={() => setFilter(option.filter)}
-										className={cn(
-											'rounded-full px-4 py-2',
-											active ? 'bg-blue-600' : 'bg-slate-200 active:bg-slate-300',
-										)}
-									>
-										<Text
-											className={cn(
-												'font-medium text-sm',
-												active ? 'text-white' : 'text-slate-600',
-											)}
-										>
-											{option.label}
-										</Text>
-									</Pressable>
-								);
-							})}
-						</View>
-					) : null}
-
-					{visible.length ? (
-						<View className="gap-4">
-							{visible.map((deneme) => (
-								<DenemeCard
-									key={deneme.documentId}
-									deneme={deneme}
-									onPress={() => router.push(`/deneme-sinavlari/${deneme.slug}`)}
-								/>
-							))}
-						</View>
+					{denemeler.length === 0 ? (
+						<EmptyState title="Henüz deneme sınavı yok" />
 					) : (
-						<View className="rounded-xl border border-slate-200 bg-white p-8">
-							<Text className="text-center text-slate-500 text-sm">
-								Bu filtrede henüz deneme yok. Yakında eklenecek.
-							</Text>
-						</View>
+						<>
+							{options.length > 2 ? (
+								<View className="flex-row flex-wrap gap-2">
+									{options.map((option) => {
+										const active = isActive(option.filter);
+										return (
+											<Pressable
+												key={option.label}
+												onPress={() => setFilter(option.filter)}
+												className={cn(
+													'rounded-full px-4 py-2',
+													active ? 'bg-blue-600' : 'bg-slate-200 active:bg-slate-300',
+												)}
+											>
+												<Text
+													className={cn(
+														'font-medium text-sm',
+														active ? 'text-white' : 'text-slate-600',
+													)}
+												>
+													{option.label}
+												</Text>
+											</Pressable>
+										);
+									})}
+								</View>
+							) : null}
+
+							{visible.length ? (
+								<View className="gap-4">
+									{visible.map((deneme) => (
+										<DenemeCard
+											key={deneme.documentId}
+											deneme={deneme}
+											onPress={() => router.push(`/deneme-sinavlari/${deneme.slug}`)}
+										/>
+									))}
+								</View>
+							) : (
+								<View className="rounded-xl border border-slate-200 bg-white p-8">
+									<Text className="text-center text-slate-500 text-sm">
+										Bu filtrede henüz deneme yok. Yakında eklenecek.
+									</Text>
+								</View>
+							)}
+						</>
 					)}
 				</ScrollView>
 			)}

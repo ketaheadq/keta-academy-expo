@@ -8,7 +8,11 @@
     "ios": "expo start -c --ios",
     "web": "expo start -c --web",
     "lint": "biome check --write ./src --css-parse-tailwind-directives=true",
-    "lint:ci": "npx @biomejs/biome check ./src"
+    "lint:eslint": "eslint .",
+    "lint:ci": "biome check ./src --css-parse-tailwind-directives=true && eslint .",
+    "typecheck": "tsc --noEmit",
+    "doctor": "pnpm dlx expo-doctor",
+    "verify": "pnpm typecheck && pnpm lint:ci"
   },
   "dependencies": {
     "@react-navigation/native": "^7.0.0",
@@ -76,6 +80,8 @@
     "@biomejs/biome": "^2.3.15",
     "@types/node": "^26.6.6",
     "@types/react": "~19.1.10",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.2"
   },
   "private": true
