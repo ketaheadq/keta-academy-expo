@@ -20,6 +20,7 @@ import {
 	type StrapiPage,
 	type StrapiVideo,
 } from '@/lib/strapi';
+import { useThemeColors } from '@/lib/theme';
 
 type DetailData =
 	| { kind: 'missing-page' }
@@ -61,28 +62,30 @@ function buildPreviewBlocks(blocks: StrapiBlock[]): StrapiBlock[] {
 
 function ExpandableDetailsCard({ title, blocks }: { title: string; blocks: StrapiBlock[] }) {
 	const [expanded, setExpanded] = useState(false);
+	const colors = useThemeColors();
 	const preview = useMemo(() => buildPreviewBlocks(blocks), [blocks]);
 	const hasMore = JSON.stringify(preview) !== JSON.stringify(blocks);
 
 	return (
-		<View className="mb-6 rounded-2xl border border-slate-100 bg-white p-4">
+		<View className="mb-6 rounded-2xl border border-border bg-card p-4">
 			<View className="mb-2 flex-row items-center gap-2">
-				<School size={18} color="#2563eb" />
-				<Text className="font-bold text-lg text-slate-900">{title}</Text>
+				<School size={18} color={colors.primary} />
+				<Text className="font-bold text-card-foreground text-lg">{title}</Text>
 			</View>
 			<RichText blocks={expanded ? blocks : preview} />
 			{hasMore ? (
 				<Pressable
+					accessibilityState={{ expanded }}
 					onPress={() => setExpanded((prev) => !prev)}
 					className="mt-3 flex-row items-center gap-1 self-start active:opacity-70"
 				>
-					<Text className="font-bold text-blue-600 text-sm">
+					<Text className="font-bold text-primary text-sm">
 						{expanded ? 'Daha Az Göster' : 'Devamını Oku'}
 					</Text>
 					{expanded ? (
-						<ChevronUp size={16} color="#2563eb" />
+						<ChevronUp size={16} color={colors.primary} />
 					) : (
-						<ChevronDown size={16} color="#2563eb" />
+						<ChevronDown size={16} color={colors.primary} />
 					)}
 				</Pressable>
 			) : null}
@@ -92,6 +95,7 @@ function ExpandableDetailsCard({ title, blocks }: { title: string; blocks: Strap
 
 export default function SayfaDetayScreen() {
 	const { slug, subSlug } = useLocalSearchParams<{ slug: string; subSlug: string }>();
+	const colors = useThemeColors();
 
 	const { data, loading, error, reload } = useAsync(async (): Promise<DetailData> => {
 		const page = await getPageBySlug(slug);
@@ -133,7 +137,7 @@ export default function SayfaDetayScreen() {
 		headerTitle = data.page.title;
 		content = (
 			<View className="items-center px-6 py-16">
-				<Text className="text-center font-bold text-lg text-slate-900">
+				<Text className="text-center font-bold text-foreground text-lg">
 					Desteklenmeyen sayfa türü
 				</Text>
 			</View>
@@ -167,11 +171,11 @@ export default function SayfaDetayScreen() {
 							<SectionHeading title="İlgili Sayfalar" />
 							{item.related_datas.map((related) => (
 								<Link key={related.id} href={`/sayfalar/${slug}/${related.slug}`} asChild>
-									<Pressable className="mb-2 flex-row items-center justify-between gap-2 rounded-xl border border-slate-100 bg-white p-4 active:bg-slate-50">
-										<Text className="flex-1 font-medium text-slate-900" numberOfLines={2}>
+									<Pressable className="mb-2 flex-row items-center justify-between gap-2 rounded-xl border border-input bg-card p-4 active:bg-muted">
+										<Text className="flex-1 font-medium text-foreground" numberOfLines={2}>
 											{related.title}
 										</Text>
-										<ChevronRight size={18} color="#94a3b8" />
+										<ChevronRight size={18} color={colors.mutedForeground} />
 									</Pressable>
 								</Link>
 							))}
@@ -207,7 +211,7 @@ export default function SayfaDetayScreen() {
 	}
 
 	return (
-		<View className="flex-1 bg-white">
+		<View className="flex-1 bg-background">
 			<Stack.Screen options={{ title: headerTitle }} />
 			{content}
 		</View>

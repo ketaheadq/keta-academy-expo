@@ -3,6 +3,7 @@ import { FileText, MessageCircle, Users } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Pressable, Text, View } from 'react-native';
 import { getRaporOzeti, raporPdfUrl } from '@/lib/deneme';
+import { useThemeColors } from '@/lib/theme';
 
 const POLL_MS = 3000;
 const GIVE_UP_MS = 3 * 60 * 1000;
@@ -13,6 +14,7 @@ const GIVE_UP_MS = 3 * 60 * 1000;
  * endpoint itself reports "being prepared" until the file is ready.
  */
 export function RaporHazir({ raporKey, denemeBaslik }: { raporKey: string; denemeBaslik: string }) {
+	const colors = useThemeColors();
 	const [ready, setReady] = useState(false);
 	const [timedOut, setTimedOut] = useState(false);
 
@@ -43,8 +45,8 @@ export function RaporHazir({ raporKey, denemeBaslik }: { raporKey: string; denem
 	if (!ready && !timedOut) {
 		return (
 			<View className="mt-3 flex-row items-center gap-2">
-				<ActivityIndicator size="small" color="#2563eb" />
-				<Text className="flex-1 text-slate-900 text-sm">
+				<ActivityIndicator size="small" color={colors.primary} />
+				<Text className="flex-1 text-foreground text-sm">
 					Raporun hazırlanıyor, genellikle bir dakikadan kısa sürer…
 				</Text>
 			</View>
@@ -57,32 +59,32 @@ export function RaporHazir({ raporKey, denemeBaslik }: { raporKey: string; denem
 	return (
 		<View className="mt-3 gap-3">
 			{timedOut && !ready ? (
-				<Text className="text-slate-500 text-sm">
+				<Text className="text-muted-foreground text-sm">
 					Hazırlanması biraz uzun sürüyor. Linki birkaç dakika sonra açabilirsin.
 				</Text>
 			) : null}
 			<Pressable
 				onPress={() => void Linking.openURL(pdfUrl)}
-				className="flex-row items-center justify-center gap-2 rounded-xl bg-blue-600 px-6 py-3.5 active:bg-blue-700"
+				className="flex-row items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 active:bg-primary/90"
 			>
-				<FileText size={18} color="#ffffff" />
-				<Text className="font-bold text-sm text-white">PDF raporunu aç</Text>
+				<FileText size={18} color={colors.primaryForeground} />
+				<Text className="font-bold text-primary-foreground text-sm">PDF raporunu aç</Text>
 			</Pressable>
 			<Pressable
 				onPress={() => void Linking.openURL(`https://wa.me/?text=${encodeURIComponent(shareText)}`)}
 				className="flex-row items-center justify-center gap-2 rounded-xl bg-[#25D366] px-6 py-3.5 active:opacity-80"
 			>
-				<MessageCircle size={18} color="#ffffff" />
-				<Text className="font-bold text-sm text-white">WhatsApp'ta paylaş</Text>
+				<MessageCircle size={18} color="#10231f" />
+				<Text className="font-bold text-[#10231f] text-sm">WhatsApp'ta paylaş</Text>
 			</Pressable>
 			<Link
 				href={`/rapor/${encodeURIComponent(raporKey)}/veli`}
-				className="flex-row items-center justify-center gap-2 rounded-xl border border-slate-200 px-6 py-3.5 active:bg-slate-50"
+				className="flex-row items-center justify-center gap-2 rounded-xl border border-input bg-card px-6 py-3.5 active:bg-muted"
 			>
-				<Users size={18} color="#334155" />
-				<Text className="font-bold text-slate-700 text-sm">Raporu velinle paylaş</Text>
+				<Users size={18} color={colors.foreground} />
+				<Text className="font-bold text-foreground text-sm">Raporu velinle paylaş</Text>
 			</Link>
-			<Text className="text-slate-500 text-sm">
+			<Text className="text-muted-foreground text-sm">
 				Linki kaydetmek için kendine ya da veline WhatsApp'tan gönderebilirsin.
 			</Text>
 		</View>

@@ -12,6 +12,7 @@ import {
 import { useMemo, useRef, useState } from 'react';
 import { Image, Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import QuizModal from '@/components/features/quiz/quiz-modal';
+import { Reveal } from '@/components/shared/motion';
 import { RichText } from '@/components/shared/rich-text';
 import { EmptyState, ErrorState, LoadingState } from '@/components/shared/states';
 import { YouTubePlayer } from '@/components/shared/youtube-player';
@@ -27,6 +28,7 @@ import {
 	startCourse,
 	updateLessonProgress,
 } from '@/lib/strapi';
+import { useThemeColors } from '@/lib/theme';
 import { cn, formatDuration } from '@/lib/utils';
 import { useJWT } from '@/stores/auth-store';
 
@@ -39,6 +41,7 @@ export default function CourseDetailScreen() {
 	const [activeQuiz, setActiveQuiz] = useState<StrapiQuiz | null>(null);
 	const [completingId, setCompletingId] = useState<string | null>(null);
 	const [progressError, setProgressError] = useState(false);
+	const colors = useThemeColors();
 
 	const { data, loading, error, reload } = useAsync(async () => {
 		// Navigating to another course starts from a clean local state.
@@ -86,7 +89,7 @@ export default function CourseDetailScreen() {
 		return (
 			<>
 				<Stack.Screen options={{ title: 'Kurs' }} />
-				<View className="flex-1 justify-center bg-slate-50">
+				<View className="flex-1 justify-center bg-background">
 					<EmptyState
 						title="Aradığınız kurs bulunamadı."
 						actionLabel="Ana Sayfaya Dön"
@@ -144,13 +147,13 @@ export default function CourseDetailScreen() {
 	return (
 		<>
 			<Stack.Screen options={{ title: course.title }} />
-			<ScrollView ref={scrollRef} className="flex-1 bg-slate-50">
+			<ScrollView ref={scrollRef} className="flex-1 bg-background">
 				<View className="gap-6 p-4">
 					{!jwt ? (
-						<View className="rounded-xl border border-blue-100 bg-blue-50 p-4">
-							<Text className="text-blue-700 text-sm">
+						<View className="rounded-xl border border-border bg-accent p-4">
+							<Text className="text-accent-foreground text-sm">
 								<Text className="font-bold">Not:</Text> İlerlemenizi kaydetmek için{' '}
-								<Text className="text-blue-600 underline" onPress={() => router.push(loginHref)}>
+								<Text className="text-primary underline" onPress={() => router.push(loginHref)}>
 									giriş yapın
 								</Text>
 								.
@@ -159,196 +162,208 @@ export default function CourseDetailScreen() {
 					) : null}
 
 					{current ? (
-						<View className="overflow-hidden rounded-2xl border border-slate-100 bg-white shadow-sm">
-							<YouTubePlayer
-								key={current.documentId}
-								videoURL={current.videoURL}
-								height={220}
-								onEnded={() => void markComplete(current.documentId)}
-							/>
-							<View className="gap-4 p-4">
-								<View>
-									<Text className="font-bold text-slate-900 text-xl">{current.title}</Text>
-									<Text className="mt-1 text-slate-500">{current.description}</Text>
-								</View>
+						<Reveal key={current.documentId} delay={40}>
+							<View className="overflow-hidden rounded-2xl border border-border bg-card shadow-black/5 shadow-sm">
+								<YouTubePlayer
+									key={current.documentId}
+									videoURL={current.videoURL}
+									height={220}
+									onEnded={() => void markComplete(current.documentId)}
+								/>
+								<View className="gap-4 p-4">
+									<View>
+										<Text className="font-bold text-foreground text-xl">{current.title}</Text>
+										<Text className="mt-1 text-muted-foreground">{current.description}</Text>
+									</View>
 
-								<RichText blocks={current.content} />
+									<RichText blocks={current.content} />
 
-								{exam ? (
-									<Link href={`/deneme-sinavlari/${exam.slug}`} asChild>
-										<Pressable className="flex-row items-center gap-2 rounded-xl border border-blue-100 bg-blue-50 p-3 active:bg-blue-100">
-											<Target size={16} color="#2563eb" />
-											<Text className="flex-1 font-medium text-blue-700 text-sm">
-												Bu konunun mini denemesini çöz: {exam.baslik}
-											</Text>
-										</Pressable>
-									</Link>
-								) : null}
-
-								{current.attachments?.map((attachment) => (
-									<Pressable
-										key={attachment.id}
-										onPress={() => void Linking.openURL(mediaUrl(attachment.url) ?? attachment.url)}
-										className="flex-row items-center gap-2 py-1 active:opacity-70"
-									>
-										<Paperclip size={16} color="#2563eb" />
-										<Text className="flex-1 text-blue-600 text-sm underline">
-											{attachment.name}
-										</Text>
-									</Pressable>
-								))}
-
-								<View className="flex-row flex-wrap items-center gap-2">
-									<Pressable
-										disabled={currentIndex === 0}
-										onPress={() => selectLesson(currentIndex - 1)}
-										className={cn(
-											'rounded-xl border border-slate-200 bg-white px-5 py-2.5 active:bg-slate-50',
-											currentIndex === 0 && 'opacity-40',
-										)}
-									>
-										<Text className="font-semibold text-slate-700 text-sm">Önceki</Text>
-									</Pressable>
-									<Pressable
-										disabled={currentIndex >= totalLessons - 1}
-										onPress={() => selectLesson(currentIndex + 1)}
-										className={cn(
-											'rounded-xl border border-slate-200 bg-white px-5 py-2.5 active:bg-slate-50',
-											currentIndex >= totalLessons - 1 && 'opacity-40',
-										)}
-									>
-										<Text className="font-semibold text-slate-700 text-sm">Sonraki</Text>
-									</Pressable>
-
-									{!jwt ? (
-										<Pressable
-											onPress={() => router.push(loginHref)}
-											className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 active:bg-slate-50"
-										>
-											<Text className="font-semibold text-slate-700 text-sm">Giriş Yap</Text>
-										</Pressable>
-									) : isCurrentComplete ? (
-										<View className="flex-row items-center gap-2 rounded-xl bg-green-50 px-5 py-2.5">
-											<CheckCircle size={16} color="#16a34a" />
-											<Text className="font-semibold text-green-700 text-sm">Tamamlandı</Text>
-										</View>
-									) : (
-										<Pressable
-											onPress={() => void markComplete(current.documentId)}
-											disabled={Boolean(completingId)}
-											className="flex-row items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 active:bg-blue-700 disabled:opacity-50"
-										>
-											<Circle size={16} color="#ffffff" />
-											<Text className="font-semibold text-sm text-white">
-												{completingId ? 'Kaydediliyor...' : 'Tamamlandı İşaretle'}
-											</Text>
-										</Pressable>
-									)}
-
-									{current.quiz?.questions?.length ? (
-										<Pressable
-											onPress={() => openQuiz(current.quiz as StrapiQuiz)}
-											className="flex-row items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-5 py-2.5 active:bg-blue-100"
-										>
-											<Target size={16} color="#2563eb" />
-											<Text className="font-semibold text-blue-700 text-sm">Quiz Çöz</Text>
-										</Pressable>
+									{exam ? (
+										<Link href={`/deneme-sinavlari/${exam.slug}`} asChild>
+											<Pressable className="flex-row items-center gap-2 rounded-xl border border-border bg-accent p-3 active:bg-secondary">
+												<Target size={16} color={colors.primary} />
+												<Text className="flex-1 font-medium text-primary text-sm">
+													Bu konunun mini denemesini çöz: {exam.baslik}
+												</Text>
+											</Pressable>
+										</Link>
 									) : null}
+
+									{current.attachments?.map((attachment) => (
+										<Pressable
+											key={attachment.id}
+											onPress={() =>
+												void Linking.openURL(mediaUrl(attachment.url) ?? attachment.url)
+											}
+											className="flex-row items-center gap-2 py-1 active:opacity-70"
+										>
+											<Paperclip size={16} color={colors.primary} />
+											<Text className="flex-1 text-primary text-sm underline">
+												{attachment.name}
+											</Text>
+										</Pressable>
+									))}
+
+									<View className="flex-row flex-wrap items-center gap-2">
+										<Pressable
+											disabled={currentIndex === 0}
+											onPress={() => selectLesson(currentIndex - 1)}
+											className={cn(
+												'rounded-xl border border-input bg-card px-5 py-2.5 active:bg-muted',
+												currentIndex === 0 && 'opacity-40',
+											)}
+										>
+											<Text className="font-semibold text-foreground text-sm">Önceki</Text>
+										</Pressable>
+										<Pressable
+											disabled={currentIndex >= totalLessons - 1}
+											onPress={() => selectLesson(currentIndex + 1)}
+											className={cn(
+												'rounded-xl border border-input bg-card px-5 py-2.5 active:bg-muted',
+												currentIndex >= totalLessons - 1 && 'opacity-40',
+											)}
+										>
+											<Text className="font-semibold text-foreground text-sm">Sonraki</Text>
+										</Pressable>
+
+										{!jwt ? (
+											<Pressable
+												onPress={() => router.push(loginHref)}
+												className="rounded-xl border border-input bg-card px-5 py-2.5 active:bg-muted"
+											>
+												<Text className="font-semibold text-foreground text-sm">Giriş Yap</Text>
+											</Pressable>
+										) : isCurrentComplete ? (
+											<View className="flex-row items-center gap-2 rounded-xl bg-success/10 px-5 py-2.5">
+												<CheckCircle size={16} color={colors.success} />
+												<Text className="font-semibold text-sm text-success">Tamamlandı</Text>
+											</View>
+										) : (
+											<Pressable
+												onPress={() => void markComplete(current.documentId)}
+												disabled={Boolean(completingId)}
+												className="flex-row items-center gap-2 rounded-xl bg-primary px-5 py-2.5 active:bg-primary/90 disabled:opacity-50"
+											>
+												<Circle size={16} color={colors.primaryForeground} />
+												<Text className="font-semibold text-primary-foreground text-sm">
+													{completingId ? 'Kaydediliyor...' : 'Tamamlandı İşaretle'}
+												</Text>
+											</Pressable>
+										)}
+
+										{current.quiz?.questions?.length ? (
+											<Pressable
+												onPress={() => openQuiz(current.quiz as StrapiQuiz)}
+												className="flex-row items-center gap-2 rounded-xl border border-input bg-secondary px-5 py-2.5 active:bg-accent"
+											>
+												<Target size={16} color={colors.secondaryForeground} />
+												<Text className="font-semibold text-secondary-foreground text-sm">
+													Quiz Çöz
+												</Text>
+											</Pressable>
+										) : null}
+									</View>
 								</View>
 							</View>
-						</View>
+						</Reveal>
 					) : null}
 
 					{progressError ? (
-						<Text className="text-red-600 text-sm">
-							İlerleme kaydedilemedi. Bağlantını kontrol edip tekrar dene.
-						</Text>
+						<View className="rounded-xl bg-destructive/10 p-3">
+							<Text className="text-destructive text-sm">
+								İlerleme kaydedilemedi. Bağlantını kontrol edip tekrar dene.
+							</Text>
+						</View>
 					) : null}
 
-					<View className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-						<View className="mb-3 flex-row items-center gap-2">
-							<BookOpen size={20} color="#0f172a" />
-							<Text className="font-bold text-lg text-slate-900">Bu Kurs Hakkında</Text>
+					<Reveal delay={100}>
+						<View className="rounded-2xl border border-border bg-card p-4 shadow-black/5 shadow-sm">
+							<View className="mb-3 flex-row items-center gap-2">
+								<BookOpen size={20} color={colors.foreground} />
+								<Text className="font-bold text-foreground text-lg">Bu Kurs Hakkında</Text>
+							</View>
+							<Text className="mb-2 font-semibold text-foreground">Kurs Açıklaması</Text>
+							<Text className="mb-4 text-muted-foreground">{course.description}</Text>
+							<View className="gap-2">
+								<InfoRow icon={Target} text={`Konu: ${course.subject?.title ?? ''}`} />
+								<InfoRow
+									icon={GraduationCap}
+									text={`Sınıf: ${(course.grades ?? []).map((grade) => grade.title).join(', ')}`}
+								/>
+								<InfoRow icon={Clock} text={`Toplam Süre: ${formatDuration(course.duration)}`} />
+								<InfoRow icon={BookOpen} text={`${totalLessons} Ders`} />
+							</View>
+							{thumbnail ? (
+								<Image
+									source={{ uri: thumbnail }}
+									accessibilityLabel={course.thumbnail?.alternativeText || course.title}
+									resizeMode="cover"
+									style={{ width: '100%', height: 192, borderRadius: 12, marginTop: 16 }}
+								/>
+							) : null}
 						</View>
-						<Text className="mb-2 font-semibold text-slate-900">Kurs Açıklaması</Text>
-						<Text className="mb-4 text-slate-500">{course.description}</Text>
-						<View className="gap-2">
-							<InfoRow icon={Target} text={`Konu: ${course.subject?.title ?? ''}`} />
-							<InfoRow
-								icon={GraduationCap}
-								text={`Sınıf: ${(course.grades ?? []).map((grade) => grade.title).join(', ')}`}
-							/>
-							<InfoRow icon={Clock} text={`Toplam Süre: ${formatDuration(course.duration)}`} />
-							<InfoRow icon={BookOpen} text={`${totalLessons} Ders`} />
-						</View>
-						{thumbnail ? (
-							<Image
-								source={{ uri: thumbnail }}
-								accessibilityLabel={course.thumbnail?.alternativeText || course.title}
-								resizeMode="cover"
-								style={{ width: '100%', height: 192, borderRadius: 12, marginTop: 16 }}
-							/>
-						) : null}
-					</View>
+					</Reveal>
 
-					<View className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
-						<View className="flex-row items-center justify-between">
-							<Text className="font-bold text-lg text-slate-900">Kurs Dersleri</Text>
-							<View className="rounded-full bg-slate-100 px-2.5 py-1">
-								<Text className="font-semibold text-slate-600 text-xs">
-									{completedLessons}/{totalLessons}
-								</Text>
+					<Reveal delay={160}>
+						<View className="rounded-2xl border border-border bg-card p-4 shadow-black/5 shadow-sm">
+							<View className="flex-row items-center justify-between">
+								<Text className="font-bold text-foreground text-lg">Kurs Dersleri</Text>
+								<View className="rounded-full bg-muted px-2.5 py-1">
+									<Text className="font-semibold text-muted-foreground text-xs">
+										{completedLessons}/{totalLessons}
+									</Text>
+								</View>
+							</View>
+							<Text className="mt-1 mb-3 text-muted-foreground text-sm">
+								Kurstaki ilerlemenizi takip edin
+							</Text>
+							<View className="gap-2">
+								{links.map((link, index) => {
+									const lesson = link.lesson;
+									const done = completedIds.has(lesson.documentId);
+									const active = index === currentIndex;
+									return (
+										<Pressable
+											key={lesson.documentId}
+											onPress={() => selectLesson(index)}
+											className={cn(
+												'flex-row items-start gap-3 rounded-xl border-2 p-3',
+												active
+													? 'border-primary bg-accent'
+													: 'border-transparent bg-card active:bg-muted',
+											)}
+										>
+											<View className="mt-0.5">
+												{done ? (
+													<CheckCircle size={20} color={colors.success} />
+												) : (
+													<Circle size={20} color={colors.mutedForeground} />
+												)}
+											</View>
+											<View className="flex-1">
+												<View className="flex-row items-center gap-2">
+													<Text
+														className="flex-1 font-medium text-foreground text-sm"
+														numberOfLines={1}
+													>
+														{index + 1}. {lesson.title}
+													</Text>
+													{lesson.quiz ? (
+														<View className="rounded-full border border-input px-2 py-0.5">
+															<Text className="text-muted-foreground text-xs">Quiz</Text>
+														</View>
+													) : null}
+												</View>
+												<Text className="mt-1 text-muted-foreground text-xs" numberOfLines={2}>
+													{lesson.description}
+												</Text>
+											</View>
+										</Pressable>
+									);
+								})}
 							</View>
 						</View>
-						<Text className="mt-1 mb-3 text-slate-500 text-sm">
-							Kurstaki ilerlemenizi takip edin
-						</Text>
-						<View className="gap-2">
-							{links.map((link, index) => {
-								const lesson = link.lesson;
-								const done = completedIds.has(lesson.documentId);
-								const active = index === currentIndex;
-								return (
-									<Pressable
-										key={lesson.documentId}
-										onPress={() => selectLesson(index)}
-										className={cn(
-											'flex-row items-start gap-3 rounded-xl border-2 p-3',
-											active
-												? 'border-blue-600 bg-blue-50'
-												: 'border-transparent bg-white active:bg-slate-50',
-										)}
-									>
-										<View className="mt-0.5">
-											{done ? (
-												<CheckCircle size={20} color="#16a34a" />
-											) : (
-												<Circle size={20} color="#64748b" />
-											)}
-										</View>
-										<View className="flex-1">
-											<View className="flex-row items-center gap-2">
-												<Text
-													className="flex-1 font-medium text-slate-900 text-sm"
-													numberOfLines={1}
-												>
-													{index + 1}. {lesson.title}
-												</Text>
-												{lesson.quiz ? (
-													<View className="rounded-full border border-slate-200 px-2 py-0.5">
-														<Text className="text-slate-600 text-xs">Quiz</Text>
-													</View>
-												) : null}
-											</View>
-											<Text className="mt-1 text-slate-500 text-xs" numberOfLines={2}>
-												{lesson.description}
-											</Text>
-										</View>
-									</Pressable>
-								);
-							})}
-						</View>
-					</View>
+					</Reveal>
 				</View>
 			</ScrollView>
 			{activeQuiz && jwt ? (
@@ -365,10 +380,11 @@ export default function CourseDetailScreen() {
 }
 
 function InfoRow({ icon: Icon, text }: { icon: LucideIcon; text: string }) {
+	const colors = useThemeColors();
 	return (
 		<View className="flex-row items-center gap-2">
-			<Icon size={16} color="#64748b" />
-			<Text className="flex-1 text-slate-500 text-sm">{text}</Text>
+			<Icon size={16} color={colors.mutedForeground} />
+			<Text className="flex-1 text-muted-foreground text-sm">{text}</Text>
 		</View>
 	);
 }

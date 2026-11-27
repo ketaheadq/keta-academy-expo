@@ -2,6 +2,7 @@ import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ScrollView, Text, TextInput, View } from 'react-native';
 import { CourseCard } from '@/components/shared/course-card';
+import { Reveal } from '@/components/shared/motion';
 import { EmptyState, ErrorState, LoadingState, SectionHeading } from '@/components/shared/states';
 import { useAsync } from '@/hooks/use-async';
 import { getCourseIcon } from '@/lib/icons';
@@ -12,6 +13,7 @@ import {
 	getSubjectBySlug,
 	type StrapiCourse,
 } from '@/lib/strapi';
+import { useThemeColors } from '@/lib/theme';
 import { normalizeTurkish } from '@/lib/utils';
 import { useJWT } from '@/stores/auth-store';
 
@@ -27,6 +29,7 @@ export default function SubjectScreen() {
 	const { slug } = useLocalSearchParams<{ slug: string }>();
 	const jwt = useJWT();
 	const [query, setQuery] = useState('');
+	const colors = useThemeColors();
 
 	const { data, loading, error, reload } = useAsync(async () => {
 		const subject = await getSubjectBySlug(slug);
@@ -73,7 +76,7 @@ export default function SubjectScreen() {
 		return (
 			<>
 				<Stack.Screen options={{ title: 'Konu' }} />
-				<View className="flex-1 justify-center bg-slate-50">
+				<View className="flex-1 justify-center bg-background">
 					<EmptyState title="Konu bulunamadı" />
 				</View>
 			</>
@@ -99,19 +102,21 @@ export default function SubjectScreen() {
 	return (
 		<>
 			<Stack.Screen options={{ title: subject.title }} />
-			<ScrollView className="flex-1 bg-slate-50">
+			<ScrollView className="flex-1 bg-background">
 				<View className="gap-8 p-4">
-					<View className="items-center pt-4">
-						<View className="mb-3 rounded-full bg-blue-50 p-3">
-							<Icon size={24} color="#2563eb" />
+					<Reveal delay={20}>
+						<View className="items-center pt-4">
+							<View className="mb-3 rounded-full bg-accent p-3">
+								<Icon size={24} color={colors.primary} />
+							</View>
+							<Text className="text-center font-bold text-3xl text-foreground">
+								{subject.title} Öğren
+							</Text>
+							<Text className="mt-2 text-center text-lg text-muted-foreground">
+								{subject.title} dersinde başarı elde et.
+							</Text>
 						</View>
-						<Text className="text-center font-bold text-3xl text-slate-900">
-							{subject.title} Öğren
-						</Text>
-						<Text className="mt-2 text-center text-lg text-slate-600">
-							{subject.title} dersinde başarı elde et.
-						</Text>
-					</View>
+					</Reveal>
 
 					{courses.length === 0 ? (
 						<EmptyState title="Bu konu için ders bulunamadı" />
@@ -138,13 +143,16 @@ export default function SubjectScreen() {
 								</View>
 							) : null}
 
-							<TextInput
-								value={query}
-								onChangeText={setQuery}
-								placeholder="Ders ara..."
-								placeholderTextColor="#94a3b8"
-								className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900"
-							/>
+							<Reveal delay={80}>
+								<TextInput
+									accessibilityLabel="Ders ara"
+									value={query}
+									onChangeText={setQuery}
+									placeholder="Ders ara..."
+									placeholderTextColor={colors.mutedForeground}
+									className="rounded-xl border border-input bg-card px-4 py-3 text-base text-foreground"
+								/>
+							</Reveal>
 
 							{filtered.length === 0 ? (
 								<EmptyState title="Aradığınız kriterlere uygun ders bulunamadı" />

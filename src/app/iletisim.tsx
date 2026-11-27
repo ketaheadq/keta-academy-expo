@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { useAsync } from '@/hooks/use-async';
 import { getContactPage } from '@/lib/strapi';
+import { useThemeColors } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
 const FALLBACK_CONTACT = {
@@ -50,6 +51,7 @@ const FAQ_ITEMS = [
 
 export default function ContactScreen() {
 	const [openIndex, setOpenIndex] = useState(-1);
+	const colors = useThemeColors();
 
 	const { data } = useAsync(async () => {
 		try {
@@ -62,14 +64,14 @@ export default function ContactScreen() {
 	const contact = data ?? FALLBACK_CONTACT;
 
 	return (
-		<View className="flex-1 bg-white">
+		<View className="flex-1 bg-background">
 			<Stack.Screen options={{ title: 'İletişim' }} />
 			<ScrollView className="flex-1">
-				<View className="bg-blue-600 px-6 py-12">
-					<Text className="text-center font-bold text-3xl text-white leading-tight">
+				<View className="bg-primary px-6 py-12">
+					<Text className="text-center font-bold text-3xl text-primary-foreground leading-tight">
 						Bizimle İletişime Geçin
 					</Text>
-					<Text className="mt-4 text-center text-base text-blue-100 leading-relaxed">
+					<Text className="mt-4 text-center text-base text-primary-foreground/85 leading-relaxed">
 						Sorularınız, önerileriniz veya destek talepleriniz için buradayız. Size en kısa sürede
 						dönüş yapacağız.
 					</Text>
@@ -77,80 +79,82 @@ export default function ContactScreen() {
 						{HERO_CHIPS.map((chip) => (
 							<View
 								key={chip.label}
-								className="flex-row items-center gap-2 rounded-full bg-white/15 px-3 py-1.5"
+								className="flex-row items-center gap-2 rounded-full bg-primary-foreground/15 px-3 py-1.5"
 							>
-								<chip.icon size={14} color="#ffffff" />
-								<Text className="text-sm text-white">{chip.label}</Text>
+								<chip.icon size={14} color={colors.primaryForeground} />
+								<Text className="text-primary-foreground text-sm">{chip.label}</Text>
 							</View>
 						))}
 					</View>
 				</View>
 
 				<View className="p-5">
-					<View className="rounded-2xl border border-slate-200 bg-white p-5">
+					<View className="rounded-2xl border border-border bg-card p-5">
 						<View className="mb-1 flex-row items-center gap-2">
-							<MessageCircle size={22} color="#2563eb" />
-							<Text className="font-bold text-slate-900 text-xl">İletişim Bilgileri</Text>
+							<MessageCircle size={22} color={colors.primary} />
+							<Text className="font-bold text-foreground text-xl">İletişim Bilgileri</Text>
 						</View>
-						<Text className="mb-5 text-slate-500 text-sm">
+						<Text className="mb-5 text-muted-foreground text-sm">
 							Bize ulaşmak için aşağıdaki bilgileri kullanabilirsiniz
 						</Text>
 
 						<View className="gap-3">
-							<View className="flex-row items-start gap-4 rounded-xl bg-blue-50 p-4">
-								<View className="rounded-lg bg-blue-600 p-2">
-									<Phone size={18} color="#ffffff" />
+							<View className="flex-row items-start gap-4 rounded-xl bg-accent p-4">
+								<View className="rounded-lg bg-primary p-2">
+									<Phone size={18} color={colors.primaryForeground} />
 								</View>
 								<View className="flex-1">
-									<Text className="font-semibold text-slate-900">Telefon</Text>
+									<Text className="font-semibold text-foreground">Telefon</Text>
 									<Pressable
 										onPress={() => void Linking.openURL(`tel:${contact.phone}`)}
 										className="self-start active:opacity-70"
 									>
-										<Text className="font-medium text-blue-600">{contact.phone}</Text>
+										<Text className="font-medium text-primary">{contact.phone}</Text>
 									</Pressable>
-									<Text className="mt-1 text-slate-500 text-sm">
+									<Text className="mt-1 text-muted-foreground text-sm">
 										Pazartesi - Cuma: 09:00 - 18:00
 									</Text>
 								</View>
 							</View>
 
-							<View className="flex-row items-start gap-4 rounded-xl bg-blue-50 p-4">
-								<View className="rounded-lg bg-blue-600 p-2">
-									<Mail size={18} color="#ffffff" />
+							<View className="flex-row items-start gap-4 rounded-xl bg-accent p-4">
+								<View className="rounded-lg bg-primary p-2">
+									<Mail size={18} color={colors.primaryForeground} />
 								</View>
 								<View className="flex-1">
-									<Text className="font-semibold text-slate-900">E-posta</Text>
+									<Text className="font-semibold text-foreground">E-posta</Text>
 									<Pressable
 										onPress={() => void Linking.openURL(`mailto:${contact.email}`)}
 										className="self-start active:opacity-70"
 									>
-										<Text className="font-medium text-blue-600">{contact.email}</Text>
+										<Text className="font-medium text-primary">{contact.email}</Text>
 									</Pressable>
-									<Text className="mt-1 text-slate-500 text-sm">
+									<Text className="mt-1 text-muted-foreground text-sm">
 										24 saat içinde yanıt veriyoruz
 									</Text>
 								</View>
 							</View>
 
-							<View className="flex-row items-start gap-4 rounded-xl bg-blue-50 p-4">
-								<View className="rounded-lg bg-blue-600 p-2">
-									<MapPin size={18} color="#ffffff" />
+							<View className="flex-row items-start gap-4 rounded-xl bg-accent p-4">
+								<View className="rounded-lg bg-primary p-2">
+									<MapPin size={18} color={colors.primaryForeground} />
 								</View>
 								<View className="flex-1">
-									<Text className="font-semibold text-slate-900">Adres</Text>
-									<Text className="font-medium text-blue-600">{contact.address}</Text>
-									<Text className="mt-1 text-slate-500 text-sm">Ofis ziyaretleri randevu ile</Text>
+									<Text className="font-semibold text-foreground">Adres</Text>
+									<Text className="font-medium text-primary">{contact.address}</Text>
+									<Text className="mt-1 text-muted-foreground text-sm">
+										Ofis ziyaretleri randevu ile
+									</Text>
 								</View>
 							</View>
 						</View>
 					</View>
 
-					<View className="mt-6 rounded-2xl border border-slate-200 bg-white p-5">
-						<Text className="text-center font-bold text-slate-900 text-xl">
+					<View className="mt-6 rounded-2xl border border-border bg-card p-5">
+						<Text className="text-center font-bold text-foreground text-xl">
 							Sıkça Sorulan Sorular
 						</Text>
-						<Text className="mt-1 mb-4 text-center text-slate-500 text-sm">
+						<Text className="mt-1 mb-4 text-center text-muted-foreground text-sm">
 							En çok merak edilen sorular ve yanıtları
 						</Text>
 						<View className="gap-2">
@@ -160,26 +164,27 @@ export default function ContactScreen() {
 									<View
 										key={item.question}
 										className={cn(
-											'overflow-hidden rounded-xl border',
-											open ? 'border-blue-200' : 'border-slate-200',
+											'overflow-hidden rounded-xl border bg-card',
+											open ? 'border-primary' : 'border-input',
 										)}
 									>
 										<Pressable
+											accessibilityState={{ expanded: open }}
 											onPress={() => setOpenIndex(open ? -1 : index)}
-											className="flex-row items-center justify-between gap-3 p-4 active:bg-slate-50"
+											className="flex-row items-center justify-between gap-3 p-4 active:bg-muted"
 										>
-											<Text className="flex-1 font-semibold text-slate-900 text-sm">
+											<Text className="flex-1 font-semibold text-foreground text-sm">
 												{item.question}
 											</Text>
 											{open ? (
-												<ChevronUp size={18} color="#2563eb" />
+												<ChevronUp size={18} color={colors.primary} />
 											) : (
-												<ChevronDown size={18} color="#64748b" />
+												<ChevronDown size={18} color={colors.mutedForeground} />
 											)}
 										</Pressable>
 										{open ? (
-											<View className="border-slate-100 border-t px-4 py-3">
-												<Text className="text-slate-600 text-sm leading-relaxed">
+											<View className="border-border border-t px-4 py-3">
+												<Text className="text-muted-foreground text-sm leading-relaxed">
 													{item.answer}
 												</Text>
 											</View>

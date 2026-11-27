@@ -3,11 +3,11 @@ import { Platform, Text, View } from 'react-native';
 
 export default function ModalScreen() {
 	return (
-		<View className="flex-1 items-center justify-center bg-white p-6">
-			<Text className="mb-4 font-bold text-2xl text-slate-900">Hakkımızda</Text>
-			<View className="my-6 h-px w-4/5 bg-slate-100" />
+		<View className="flex-1 items-center justify-center bg-background p-6">
+			<Text className="mb-4 font-bold text-2xl text-foreground">Hakkımızda</Text>
+			<View className="my-6 h-px w-4/5 bg-border" />
 
-			<Text className="text-center text-slate-600 leading-relaxed">
+			<Text className="text-center text-muted-foreground leading-relaxed">
 				Keta Akademi, her yaştan öğrenciye en kaliteli eğitim materyallerini sunmayı hedefleyen bir
 				platformdur.
 			</Text>

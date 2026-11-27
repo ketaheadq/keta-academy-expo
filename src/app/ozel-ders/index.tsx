@@ -14,6 +14,7 @@ import {
 	type TutorRatingSummary,
 	tutorPath,
 } from '@/lib/strapi';
+import { useThemeColors } from '@/lib/theme';
 import { cn, normalizeTurkish } from '@/lib/utils';
 
 const SORT_OPTIONS = [
@@ -45,6 +46,7 @@ const NO_TUTORS: StrapiTutoringProfile[] = [];
 
 export default function TutoringListScreen() {
 	const router = useRouter();
+	const colors = useThemeColors();
 	const scrollRef = useRef<ScrollView>(null);
 	const tutorSectionY = useRef(0);
 	const stepsSectionY = useRef(0);
@@ -120,34 +122,39 @@ export default function TutoringListScreen() {
 	};
 
 	return (
-		<View className="flex-1 bg-white">
+		<View className="flex-1 bg-background">
 			<Stack.Screen options={{ title: 'Özel Ders' }} />
 			{loading && !data ? (
 				<LoadingState />
 			) : error && !data ? (
 				<ErrorState message={error} onRetry={reload} />
 			) : (
-				<ScrollView ref={scrollRef} className="flex-1" showsVerticalScrollIndicator={false}>
-					<View className="bg-slate-900 px-6 py-12">
-						<Text className="text-center font-bold text-3xl text-white leading-tight">
-							Uzman Öğretmenlerle <Text className="text-amber-400">Birebir Eğitim</Text>
+				<ScrollView
+					ref={scrollRef}
+					className="flex-1 bg-background"
+					showsVerticalScrollIndicator={false}
+				>
+					<View className="bg-foreground px-6 py-12">
+						<Text className="text-center font-bold text-3xl text-background leading-tight">
+							Uzman Öğretmenlerle{' '}
+							<Text className="rounded bg-background px-1 text-warning">Birebir Eğitim</Text>
 						</Text>
-						<Text className="mt-4 text-center text-base text-slate-300 leading-relaxed">
+						<Text className="mt-4 text-center text-background/80 text-base leading-relaxed">
 							Alanında uzman öğretmenlerle hedeflerinize özel ders alın. Kişiselleştirilmiş bir
 							öğrenme deneyimi ile potansiyelinizi zirveye taşıyın.
 						</Text>
 						<View className="mt-8 gap-3">
 							<Pressable
 								onPress={scrollToTutors}
-								className="items-center rounded-full bg-amber-500 py-3.5 active:bg-amber-600"
+								className="items-center rounded-full bg-warning py-3.5 active:opacity-80"
 							>
-								<Text className="font-bold text-slate-900 text-sm">Hemen Başla</Text>
+								<Text className="font-bold text-primary-foreground text-sm">Hemen Başla</Text>
 							</Pressable>
 							<Pressable
 								onPress={scrollToSteps}
-								className="items-center rounded-full border border-slate-600 py-3.5 active:bg-slate-800"
+								className="items-center rounded-full border border-input py-3.5 active:bg-background/10"
 							>
-								<Text className="font-bold text-sm text-white">Nasıl Çalışır?</Text>
+								<Text className="font-bold text-background text-sm">Nasıl Çalışır?</Text>
 							</Pressable>
 						</View>
 					</View>
@@ -158,7 +165,7 @@ export default function TutoringListScreen() {
 						}}
 						className="px-4 py-8"
 					>
-						<View className="mb-4 rounded-2xl border border-slate-200 bg-white p-4">
+						<View className="mb-4 rounded-2xl border border-border bg-card p-4">
 							<ScrollView
 								horizontal
 								showsHorizontalScrollIndicator={false}
@@ -171,13 +178,15 @@ export default function TutoringListScreen() {
 										onPress={() => setSelectedSubject(subject.id)}
 										className={cn(
 											'rounded-full px-4 py-2',
-											selectedSubject === subject.id ? 'bg-blue-600' : 'bg-slate-100',
+											selectedSubject === subject.id ? 'bg-primary' : 'bg-muted',
 										)}
 									>
 										<Text
 											className={cn(
 												'font-medium text-sm',
-												selectedSubject === subject.id ? 'text-white' : 'text-slate-600',
+												selectedSubject === subject.id
+													? 'text-primary-foreground'
+													: 'text-muted-foreground',
 											)}
 										>
 											{subject.name} ({subject.count})
@@ -186,14 +195,15 @@ export default function TutoringListScreen() {
 								))}
 							</ScrollView>
 
-							<View className="mb-3 flex-row items-center gap-2 rounded-xl border border-slate-200 px-3">
-								<Search size={16} color="#64748b" />
+							<View className="mb-3 flex-row items-center gap-2 rounded-xl border border-input bg-card px-3">
+								<Search size={16} color={colors.mutedForeground} />
 								<TextInput
+									accessibilityLabel="Öğretmen ara"
 									value={searchQuery}
 									onChangeText={setSearchQuery}
 									placeholder="Öğretmen ara..."
-									placeholderTextColor="#94a3b8"
-									className="flex-1 py-2.5 text-slate-900 text-sm"
+									placeholderTextColor={colors.mutedForeground}
+									className="flex-1 py-2.5 text-foreground text-sm"
 								/>
 							</View>
 
@@ -204,15 +214,13 @@ export default function TutoringListScreen() {
 										onPress={() => setSortBy(option.id)}
 										className={cn(
 											'flex-1 items-center rounded-xl border px-2 py-2',
-											sortBy === option.id
-												? 'border-blue-600 bg-blue-50'
-												: 'border-slate-200 bg-white',
+											sortBy === option.id ? 'border-primary bg-accent' : 'border-input bg-card',
 										)}
 									>
 										<Text
 											className={cn(
 												'font-medium text-xs',
-												sortBy === option.id ? 'text-blue-600' : 'text-slate-500',
+												sortBy === option.id ? 'text-primary' : 'text-muted-foreground',
 											)}
 										>
 											{option.label}
@@ -248,23 +256,23 @@ export default function TutoringListScreen() {
 						onLayout={(e) => {
 							stepsSectionY.current = e.nativeEvent.layout.y;
 						}}
-						className="bg-slate-50 px-6 py-12"
+						className="bg-muted px-6 py-12"
 					>
-						<Text className="text-center font-bold text-2xl text-slate-900">
+						<Text className="text-center font-bold text-2xl text-foreground">
 							Geleceğinizi 3 Adımda Planlayın
 						</Text>
-						<Text className="mt-2 text-center text-base text-slate-600">
+						<Text className="mt-2 text-center text-base text-muted-foreground">
 							Öğrenme yolculuğunuzu başlatmak hiç bu kadar kolay olmamıştı
 						</Text>
 						<View className="mt-8 gap-6">
 							{STEPS.map((step, index) => (
 								<View key={step.title} className="flex-row gap-4">
-									<View className="size-10 items-center justify-center rounded-full bg-amber-100">
-										<Text className="font-bold text-amber-600 text-lg">{index + 1}</Text>
+									<View className="size-10 items-center justify-center rounded-full bg-warning/10">
+										<Text className="font-bold text-lg text-warning">{index + 1}</Text>
 									</View>
 									<View className="flex-1">
-										<Text className="font-bold text-lg text-slate-900">{step.title}</Text>
-										<Text className="mt-1 text-slate-600 text-sm leading-relaxed">
+										<Text className="font-bold text-foreground text-lg">{step.title}</Text>
+										<Text className="mt-1 text-muted-foreground text-sm leading-relaxed">
 											{step.description}
 										</Text>
 									</View>
@@ -273,18 +281,18 @@ export default function TutoringListScreen() {
 						</View>
 					</View>
 
-					<View className="items-center bg-slate-900 px-6 py-12">
-						<Text className="text-center font-bold text-2xl text-white">
+					<View className="items-center bg-foreground px-6 py-12">
+						<Text className="text-center font-bold text-2xl text-background">
 							Geleceğiniz İçin İlk Adımı Bugün Atın
 						</Text>
-						<Text className="mt-3 text-center text-base text-slate-300 leading-relaxed">
+						<Text className="mt-3 text-center text-background/80 text-base leading-relaxed">
 							Öğretmeninizi seçin, ücretsiz deneme dersinizi planlayın ve farkı yaşayın.
 						</Text>
 						<Pressable
 							onPress={scrollToTutors}
-							className="mt-6 rounded-full bg-amber-500 px-8 py-3.5 active:bg-amber-600"
+							className="mt-6 rounded-full bg-warning px-8 py-3.5 active:opacity-80"
 						>
-							<Text className="font-bold text-slate-900 text-sm">Öğretmenleri Gör</Text>
+							<Text className="font-bold text-primary-foreground text-sm">Öğretmenleri Gör</Text>
 						</Pressable>
 					</View>
 				</ScrollView>

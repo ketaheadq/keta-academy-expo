@@ -5,6 +5,7 @@ import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-nati
 import type { StrapiAuthResponse } from '@/lib/auth';
 import { appHref, safeAppReturnPath, withAppReturn } from '@/lib/routes';
 import { STRAPI_URL } from '@/lib/strapi';
+import { useThemeColors } from '@/lib/theme';
 import {
 	useAuthError,
 	useAuthLoading,
@@ -27,6 +28,7 @@ export default function SignInScreen() {
 	const signOut = useAuthStore((state) => state.signOut);
 	const setAuth = useAuthStore((state) => state.setAuth);
 	const clearError = useAuthStore((state) => state.clearError);
+	const colors = useThemeColors();
 
 	const [demoLoading, setDemoLoading] = useState(false);
 	const [demoError, setDemoError] = useState(false);
@@ -65,65 +67,69 @@ export default function SignInScreen() {
 	};
 
 	return (
-		<View className="flex-1 bg-white">
+		<View className="flex-1 bg-background">
 			<Stack.Screen options={{ title: 'Giriş Yap' }} />
 			<ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
 				{isAuthenticated ? (
 					<View className="flex-1 items-center gap-4 py-16">
-						<View className="size-16 items-center justify-center rounded-full bg-blue-600">
-							<GraduationCap size={32} color="#ffffff" />
+						<View className="size-16 items-center justify-center rounded-full bg-primary">
+							<GraduationCap size={32} color={colors.primaryForeground} />
 						</View>
-						<Text className="text-center font-bold text-2xl text-slate-900">
+						<Text className="text-center font-bold text-2xl text-foreground">
 							{user?.name ?? 'KetaLearn'}
 						</Text>
 						{user?.email ? (
-							<Text className="text-center text-slate-500 text-sm">{user.email}</Text>
+							<Text className="text-center text-muted-foreground text-sm">{user.email}</Text>
 						) : null}
 						<Pressable
 							onPress={() => void signOut()}
-							className="mt-4 rounded-full border border-slate-300 px-8 py-3 active:bg-slate-50"
+							className="mt-4 rounded-full border border-input bg-card px-8 py-3 active:bg-muted"
 						>
-							<Text className="font-bold text-slate-700 text-sm">Çıkış Yap</Text>
+							<Text className="font-bold text-secondary-foreground text-sm">Çıkış Yap</Text>
 						</Pressable>
 					</View>
 				) : (
 					<>
 						<View className="items-center py-6">
-							<View className="mb-5 size-16 items-center justify-center rounded-full bg-blue-600">
-								<GraduationCap size={32} color="#ffffff" />
+							<View className="mb-5 size-16 items-center justify-center rounded-full bg-primary">
+								<GraduationCap size={32} color={colors.primaryForeground} />
 							</View>
-							<Text className="font-bold text-3xl text-slate-900">Tekrar Hoşgeldiniz!</Text>
-							<Text className="mt-2 text-center text-slate-600">
+							<Text className="font-bold text-3xl text-foreground">Tekrar Hoşgeldiniz!</Text>
+							<Text className="mt-2 text-center text-muted-foreground">
 								Öğrenme yolculuğunuza devam etmek için giriş yapın
 							</Text>
 						</View>
 
-						<View className="rounded-2xl border border-slate-200 bg-white p-5">
-							<Text className="text-center font-bold text-slate-900 text-xl">
+						<View className="rounded-2xl border border-border bg-card p-5">
+							<Text className="text-center font-bold text-foreground text-xl">
 								KetaLearn'e Giriş
 							</Text>
-							<Text className="mt-1 mb-5 text-center text-slate-500 text-sm">
+							<Text className="mt-1 mb-5 text-center text-muted-foreground text-sm">
 								Kurslarınıza erişin, ilerlemenizi takip edin ve öğrenmeye devam edin
 							</Text>
 
 							{error ? (
-								<View className="mb-4 rounded-xl border border-red-200 bg-red-50 p-3">
-									<Text className="text-red-700 text-sm">{error}</Text>
+								<View className="mb-4 rounded-xl border border-destructive/30 bg-destructive/10 p-3">
+									<Text className="text-destructive text-sm">{error}</Text>
 								</View>
 							) : null}
 
 							<Pressable
 								onPress={handleGoogleSignIn}
 								disabled={isLoading}
-								className="flex-row items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 active:bg-blue-700"
+								className="flex-row items-center justify-center gap-2 rounded-xl bg-primary py-3.5 active:bg-primary/90"
 							>
 								{isLoading ? (
 									<>
-										<ActivityIndicator size="small" color="#ffffff" />
-										<Text className="font-bold text-sm text-white">Giriş yapılıyor...</Text>
+										<ActivityIndicator size="small" color={colors.primaryForeground} />
+										<Text className="font-bold text-primary-foreground text-sm">
+											Giriş yapılıyor...
+										</Text>
 									</>
 								) : (
-									<Text className="font-bold text-sm text-white">Google ile Devam Et</Text>
+									<Text className="font-bold text-primary-foreground text-sm">
+										Google ile Devam Et
+									</Text>
 								)}
 							</Pressable>
 
@@ -132,14 +138,14 @@ export default function SignInScreen() {
 									<Pressable
 										onPress={handleDemoSignIn}
 										disabled={demoLoading || isLoading}
-										className="items-center rounded-xl border border-slate-300 py-3.5 active:bg-slate-50"
+										className="items-center rounded-xl border border-input bg-card py-3.5 active:bg-muted"
 									>
-										<Text className="font-bold text-slate-700 text-sm">
+										<Text className="font-bold text-secondary-foreground text-sm">
 											{demoLoading ? 'Giriş yapılıyor...' : 'Demo öğrenciyle giriş yap'}
 										</Text>
 									</Pressable>
 									{demoError ? (
-										<Text className="mt-2 text-center text-red-600 text-sm">
+										<Text className="mt-2 text-center text-destructive text-sm">
 											Demo öğrenciyle giriş yapılamadı.
 										</Text>
 									) : null}
@@ -147,50 +153,50 @@ export default function SignInScreen() {
 							) : null}
 
 							<View className="my-5 flex-row items-center gap-2">
-								<View className="h-px flex-1 bg-slate-200" />
-								<Text className="text-slate-500 text-sm">Neden Google Girişi?</Text>
-								<View className="h-px flex-1 bg-slate-200" />
+								<View className="h-px flex-1 bg-border" />
+								<Text className="text-muted-foreground text-sm">Neden Google Girişi?</Text>
+								<View className="h-px flex-1 bg-border" />
 							</View>
 
 							<View className="gap-3">
 								<View className="flex-row items-center gap-3">
-									<Shield size={16} color="#2563eb" />
-									<Text className="flex-1 text-slate-600 text-sm">
+									<Shield size={16} color={colors.primary} />
+									<Text className="flex-1 text-muted-foreground text-sm">
 										Güvenli ve şifrelenmiş kimlik doğrulama
 									</Text>
 								</View>
 								<View className="flex-row items-center gap-3">
-									<Users size={16} color="#2563eb" />
-									<Text className="flex-1 text-slate-600 text-sm">
+									<Users size={16} color={colors.primary} />
+									<Text className="flex-1 text-muted-foreground text-sm">
 										Şifre hatırlamadan hızlı erişim
 									</Text>
 								</View>
 								<View className="flex-row items-center gap-3">
-									<BookOpen size={16} color="#2563eb" />
-									<Text className="flex-1 text-slate-600 text-sm">
+									<BookOpen size={16} color={colors.primary} />
+									<Text className="flex-1 text-muted-foreground text-sm">
 										İlerlemenizi tüm cihazlarda senkronize edin
 									</Text>
 								</View>
 							</View>
 
-							<View className="mt-5 border-slate-200 border-t pt-4">
-								<Text className="text-center text-slate-600 text-sm">
+							<View className="mt-5 border-border border-t pt-4">
+								<Text className="text-center text-muted-foreground text-sm">
 									Hesabınız yok mu?{' '}
 									<Link href={withAppReturn('/kayit-ol', returnTo)}>
-										<Text className="font-medium text-blue-600">Buradan kayıt olun</Text>
+										<Text className="font-medium text-primary">Buradan kayıt olun</Text>
 									</Link>
 								</Text>
 							</View>
 						</View>
 
-						<Text className="mt-6 text-center text-slate-500 text-xs">
+						<Text className="mt-6 text-center text-muted-foreground text-xs">
 							Giriş yaparak{' '}
 							<Link href="/hizmet-sartlari">
-								<Text className="text-blue-600">Hizmet Şartlarımızı</Text>
+								<Text className="text-primary">Hizmet Şartlarımızı</Text>
 							</Link>{' '}
 							ve{' '}
 							<Link href="/gizlilik-politikasi">
-								<Text className="text-blue-600">Gizlilik Politikamızı</Text>
+								<Text className="text-primary">Gizlilik Politikamızı</Text>
 							</Link>{' '}
 							kabul etmiş olursunuz
 						</Text>

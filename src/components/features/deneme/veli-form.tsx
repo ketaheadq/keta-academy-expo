@@ -3,10 +3,10 @@ import { Check } from 'lucide-react-native';
 import { useState } from 'react';
 import { Pressable, Text, TextInput, View } from 'react-native';
 import { addParentNumber, DenemeApiError } from '@/lib/deneme';
+import { useThemeColors } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
-const INPUT_CLASS =
-	'rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-base text-slate-900';
+const INPUT_CLASS = 'rounded-lg border border-input bg-card px-3 py-2.5 text-base text-foreground';
 
 /**
  * Adds a parent's number to an existing report so Çağlar Hoca can walk them through it. The
@@ -22,6 +22,7 @@ export function VeliForm({
 	onSuccess?: () => void;
 }) {
 	const router = useRouter();
+	const colors = useThemeColors();
 	const [adSoyad, setAdSoyad] = useState('');
 	const [telefon, setTelefon] = useState('');
 	const [raporIzni, setRaporIzni] = useState(false);
@@ -61,14 +62,14 @@ export function VeliForm({
 	if (sent) return null;
 
 	return (
-		<View className="gap-3 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+		<View className="gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm">
 			<TextInput
 				value={adSoyad}
 				onChangeText={setAdSoyad}
 				placeholder="Velinin adı soyadı"
 				accessibilityLabel="Velinin adı soyadı"
 				autoComplete="name"
-				placeholderTextColor="#94a3b8"
+				placeholderTextColor={colors.mutedForeground}
 				className={INPUT_CLASS}
 			/>
 			<TextInput
@@ -78,19 +79,23 @@ export function VeliForm({
 				accessibilityLabel="Velinin cep telefonu"
 				keyboardType="phone-pad"
 				autoComplete="tel"
-				placeholderTextColor="#94a3b8"
+				placeholderTextColor={colors.mutedForeground}
 				className={INPUT_CLASS}
 			/>
 
 			<Pressable
+				accessibilityRole="checkbox"
+				accessibilityLabel="Rapor ve değerlendirme için KVKK onayı"
+				accessibilityState={{ checked: raporIzni }}
+				aria-checked={raporIzni}
 				onPress={() => setRaporIzni((value) => !value)}
 				className="flex-row items-start gap-2.5"
 			>
 				<CheckBox checked={raporIzni} />
-				<Text className="flex-1 text-slate-700 text-sm leading-5">
+				<Text className="flex-1 text-foreground text-sm leading-5">
 					Bilgilerin rapor ve değerlendirme için işlenmesine ilişkin{' '}
 					<Text
-						className="text-blue-600 underline"
+						className="text-primary underline"
 						onPress={() => router.push('/gizlilik-politikasi')}
 					>
 						KVKK aydınlatma metnini
@@ -100,27 +105,36 @@ export function VeliForm({
 			</Pressable>
 
 			<Pressable
+				accessibilityRole="checkbox"
+				accessibilityLabel="Rapor hakkında bilgi ve kampanya iletişimi izni"
+				accessibilityState={{ checked: aramaIzni }}
+				aria-checked={aramaIzni}
 				onPress={() => setAramaIzni((value) => !value)}
 				className="flex-row items-start gap-2.5"
 			>
 				<CheckBox checked={aramaIzni} />
-				<Text className="flex-1 text-slate-700 text-sm leading-5">
+				<Text className="flex-1 text-foreground text-sm leading-5">
 					Rapor hakkında bilgi verilmesi ve kampanyalar için bu numaradan aranmak ve mesaj almak
 					istiyorum.
 				</Text>
 			</Pressable>
 
-			{error ? <Text className="text-red-600 text-sm">{error}</Text> : null}
+			{error ? <Text className="text-destructive text-sm">{error}</Text> : null}
 
 			<Pressable
 				onPress={() => void submit()}
 				disabled={sending}
 				className={cn(
 					'items-center rounded-xl px-6 py-3',
-					sending ? 'bg-slate-300' : 'bg-blue-600 active:bg-blue-700',
+					sending ? 'bg-muted' : 'bg-primary active:opacity-80',
 				)}
 			>
-				<Text className={cn('font-bold text-sm', sending ? 'text-slate-500' : 'text-white')}>
+				<Text
+					className={cn(
+						'font-bold text-sm',
+						sending ? 'text-muted-foreground' : 'text-primary-foreground',
+					)}
+				>
 					{sending ? 'Gönderiliyor...' : 'Veliye gönder'}
 				</Text>
 			</Pressable>
@@ -129,14 +143,16 @@ export function VeliForm({
 }
 
 function CheckBox({ checked }: { checked: boolean }) {
+	const colors = useThemeColors();
+
 	return (
 		<View
 			className={cn(
 				'mt-0.5 size-5 shrink-0 items-center justify-center rounded border-2',
-				checked ? 'border-blue-600 bg-blue-600' : 'border-slate-300 bg-white',
+				checked ? 'border-primary bg-primary' : 'border-input bg-card',
 			)}
 		>
-			{checked ? <Check size={14} color="#ffffff" strokeWidth={3} /> : null}
+			{checked ? <Check size={14} color={colors.primaryForeground} strokeWidth={3} /> : null}
 		</View>
 	);
 }

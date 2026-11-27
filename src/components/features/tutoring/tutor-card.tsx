@@ -3,13 +3,14 @@ import { Image, Pressable, Text, View } from 'react-native';
 import { TutorContactButtons } from '@/components/features/tutoring/tutor-contact-buttons';
 import { RatingStars } from '@/components/shared/rating-stars';
 import { mediaUrl, type StrapiTutoringProfile, type TutorRatingSummary } from '@/lib/strapi';
+import { useThemeColors } from '@/lib/theme';
 import { formatNumberTR } from '@/lib/utils';
 
 function StatTile({ value, label }: { value: string; label: string }) {
 	return (
-		<View className="flex-1 items-center rounded-lg bg-blue-50 px-1 py-2">
-			<Text className="font-bold text-blue-600 text-lg">{value}</Text>
-			<Text className="text-slate-500 text-xs">{label}</Text>
+		<View className="flex-1 items-center rounded-lg bg-accent px-1 py-2">
+			<Text className="font-bold text-lg text-primary">{value}</Text>
+			<Text className="text-muted-foreground text-xs">{label}</Text>
 		</View>
 	);
 }
@@ -27,37 +28,38 @@ export function TutorCard({
 }) {
 	const subjects = tutor.subjects ?? [];
 	const picture = mediaUrl(tutor.profilePicture?.url);
+	const colors = useThemeColors();
 
 	return (
 		<Pressable
 			onPress={onPress}
-			className="overflow-hidden rounded-2xl border border-slate-200 bg-white active:bg-slate-50"
+			className="overflow-hidden rounded-2xl border border-border bg-card active:bg-muted"
 		>
 			<View className="flex-row items-start gap-4 p-5 pb-4">
 				{picture ? (
 					<Image
 						source={{ uri: picture }}
-						className="size-16 rounded-full border-2 border-white bg-slate-100"
+						className="size-16 rounded-full border-2 border-card bg-muted"
 					/>
 				) : (
-					<View className="size-16 items-center justify-center rounded-full bg-slate-100">
-						<User size={28} color="#64748b" />
+					<View className="size-16 items-center justify-center rounded-full bg-muted">
+						<User size={28} color={colors.mutedForeground} />
 					</View>
 				)}
 				<View className="min-w-0 flex-1">
-					<Text className="font-bold text-slate-900 text-xl">{tutor.name}</Text>
-					<Text className="mb-1.5 font-medium text-blue-600 text-sm">{tutor.title}</Text>
+					<Text className="font-bold text-foreground text-xl">{tutor.name}</Text>
+					<Text className="mb-1.5 font-medium text-primary text-sm">{tutor.title}</Text>
 					<View className="flex-row flex-wrap items-center gap-2">
 						{summary.count > 0 ? (
 							<>
 								<RatingStars rating={summary.average} />
-								<Text className="font-semibold text-slate-900 text-sm">
+								<Text className="font-semibold text-foreground text-sm">
 									{formatNumberTR(summary.average)}
 								</Text>
-								<Text className="text-slate-500 text-sm">({summary.count})</Text>
+								<Text className="text-muted-foreground text-sm">({summary.count})</Text>
 							</>
 						) : (
-							<Text className="text-slate-500 text-sm">Henüz değerlendirme yok</Text>
+							<Text className="text-muted-foreground text-sm">Henüz değerlendirme yok</Text>
 						)}
 					</View>
 				</View>
@@ -66,13 +68,13 @@ export function TutorCard({
 			{subjects.length > 0 ? (
 				<View className="flex-row flex-wrap gap-2 px-5 pb-4">
 					{subjects.slice(0, 3).map((subject) => (
-						<View key={subject.slug} className="rounded-full bg-blue-50 px-2.5 py-1">
-							<Text className="font-medium text-blue-600 text-xs">{subject.title}</Text>
+						<View key={subject.slug} className="rounded-full bg-accent px-2.5 py-1">
+							<Text className="font-medium text-primary text-xs">{subject.title}</Text>
 						</View>
 					))}
 					{subjects.length > 3 ? (
-						<View className="rounded-full bg-slate-100 px-2.5 py-1">
-							<Text className="font-medium text-slate-500 text-xs">
+						<View className="rounded-full bg-muted px-2.5 py-1">
+							<Text className="font-medium text-muted-foreground text-xs">
 								+{subjects.length - 3} daha
 							</Text>
 						</View>
@@ -91,13 +93,13 @@ export function TutorCard({
 
 			<View className="px-5 pb-5">
 				<View className="mb-3 flex-row items-center justify-between">
-					<Text className="font-bold text-2xl text-slate-900">
+					<Text className="font-bold text-2xl text-foreground">
 						₺{tutor.price}
-						<Text className="font-normal text-slate-500 text-sm">/saat</Text>
+						<Text className="font-normal text-muted-foreground text-sm">/saat</Text>
 					</Text>
 					<View className="flex-row items-center gap-1">
-						<Text className="font-medium text-blue-600 text-sm">Profili gör</Text>
-						<ArrowRight size={16} color="#2563eb" />
+						<Text className="font-medium text-primary text-sm">Profili gör</Text>
+						<ArrowRight size={16} color={colors.primary} />
 					</View>
 				</View>
 				<TutorContactButtons tutor={tutor} fallbackPhone={fallbackPhone} compact />

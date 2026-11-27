@@ -13,26 +13,41 @@ import {
 	type StrapiTutoringProfile,
 	saveTutorReview,
 } from '@/lib/strapi';
+import { useThemeColors } from '@/lib/theme';
 import { cn, formatDateTR, formatNumberTR } from '@/lib/utils';
 import { useIsAuthenticated, useJWT } from '@/stores/auth-store';
 
 const RATING_LABELS = ['', 'Çok kötü', 'Kötü', 'Orta', 'İyi', 'Mükemmel'];
 
 function StarInput({ value, onChange }: { value: number; onChange: (value: number) => void }) {
+	const colors = useThemeColors();
+
 	return (
 		<View className="flex-row items-center gap-3">
-			<View className="flex-row gap-1">
+			<View
+				accessibilityRole="radiogroup"
+				accessibilityLabel="Değerlendirme puanı"
+				className="flex-row gap-1"
+			>
 				{[1, 2, 3, 4, 5].map((n) => (
-					<Pressable key={n} onPress={() => onChange(n)} hitSlop={4}>
+					<Pressable
+						key={n}
+						accessibilityRole="radio"
+						accessibilityLabel={`${n} yıldız, ${RATING_LABELS[n]}`}
+						accessibilityState={{ checked: n === value }}
+						aria-checked={n === value}
+						onPress={() => onChange(n)}
+						hitSlop={4}
+					>
 						<Star
 							size={32}
-							color={n <= value ? '#fbbf24' : '#fcd34d'}
-							fill={n <= value ? '#fbbf24' : 'transparent'}
+							color={n <= value ? colors.warning : colors.input}
+							fill={n <= value ? colors.warning : 'transparent'}
 						/>
 					</Pressable>
 				))}
 			</View>
-			<Text className="text-slate-500 text-sm">{RATING_LABELS[value]}</Text>
+			<Text className="text-muted-foreground text-sm">{RATING_LABELS[value]}</Text>
 		</View>
 	);
 }
@@ -46,6 +61,7 @@ export function TutorReviews({
 }) {
 	const jwt = useJWT();
 	const isAuthenticated = useIsAuthenticated();
+	const colors = useThemeColors();
 	const [rating, setRating] = useState(0);
 	const [comment, setComment] = useState('');
 	const [hasReview, setHasReview] = useState(false);
@@ -108,45 +124,45 @@ export function TutorReviews({
 	};
 
 	return (
-		<View className="rounded-2xl border border-slate-200 bg-white p-5">
+		<View className="rounded-2xl border border-border bg-card p-5">
 			<View className="mb-5 flex-row flex-wrap items-end justify-between gap-3">
 				<View>
-					<Text className="font-bold text-slate-900 text-xl">Öğrenci Değerlendirmeleri</Text>
+					<Text className="font-bold text-foreground text-xl">Öğrenci Değerlendirmeleri</Text>
 					{summary.count > 0 ? (
 						<View className="mt-2 flex-row flex-wrap items-center gap-2">
-							<Text className="font-bold text-2xl text-slate-900">
+							<Text className="font-bold text-2xl text-foreground">
 								{formatNumberTR(summary.average)}
 							</Text>
 							<RatingStars rating={summary.average} size={20} />
-							<Text className="text-slate-500 text-sm">({summary.count} değerlendirme)</Text>
+							<Text className="text-muted-foreground text-sm">({summary.count} değerlendirme)</Text>
 						</View>
 					) : (
-						<Text className="mt-1 text-slate-500 text-sm">Henüz değerlendirme yok.</Text>
+						<Text className="mt-1 text-muted-foreground text-sm">Henüz değerlendirme yok.</Text>
 					)}
 				</View>
 				{summary.satisfaction !== null ? (
-					<View className="items-center rounded-xl bg-blue-50 px-4 py-2">
-						<Text className="font-bold text-blue-600 text-xl">%{summary.satisfaction}</Text>
-						<Text className="text-slate-500 text-xs">Memnuniyet</Text>
+					<View className="items-center rounded-xl bg-accent px-4 py-2">
+						<Text className="font-bold text-primary text-xl">%{summary.satisfaction}</Text>
+						<Text className="text-muted-foreground text-xs">Memnuniyet</Text>
 					</View>
 				) : null}
 			</View>
 
 			{isAuthenticated && jwt ? (
 				myReview.loading ? (
-					<ActivityIndicator size="small" color="#2563eb" />
+					<ActivityIndicator size="small" color={colors.primary} />
 				) : myReview.error ? (
-					<View className="mb-6 gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
-						<Text className="text-red-700 text-sm">
+					<View className="mb-6 gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4">
+						<Text className="text-destructive text-sm">
 							Değerlendirmeniz yüklenemedi. Mevcut değerlendirmenizi silmemek için formu kapattık.
 						</Text>
 						<Pressable onPress={myReview.reload} className="self-start active:opacity-70">
-							<Text className="font-semibold text-red-700 text-sm">Tekrar dene</Text>
+							<Text className="font-semibold text-destructive text-sm">Tekrar dene</Text>
 						</Pressable>
 					</View>
 				) : (
-					<View className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
-						<Text className="mb-3 font-semibold text-slate-900 text-sm">
+					<View className="mb-6 rounded-xl border border-border bg-muted p-4">
+						<Text className="mb-3 font-semibold text-foreground text-sm">
 							{hasReview
 								? 'Değerlendirmenizi güncelleyin'
 								: `${tutor.name} hakkında ne düşünüyorsunuz?`}
@@ -159,6 +175,7 @@ export function TutorReviews({
 							}}
 						/>
 						<TextInput
+							accessibilityLabel="Değerlendirme yorumu"
 							value={comment}
 							onChangeText={(text) => {
 								setComment(text);
@@ -167,8 +184,8 @@ export function TutorReviews({
 							maxLength={1000}
 							multiline
 							placeholder="Deneyiminizi diğer öğrenci ve velilerle paylaşın (isteğe bağlı)"
-							placeholderTextColor="#94a3b8"
-							className="mt-3 rounded-lg border border-slate-200 bg-white p-3 text-slate-900 text-sm"
+							placeholderTextColor={colors.mutedForeground}
+							className="mt-3 rounded-lg border border-input bg-card p-3 text-foreground text-sm"
 							style={{ minHeight: 80, textAlignVertical: 'top' }}
 						/>
 						<View className="mt-3 flex-row flex-wrap items-center gap-3">
@@ -178,12 +195,12 @@ export function TutorReviews({
 									!rating || status === 'saving' || myReview.loading || Boolean(myReview.error)
 								}
 								className={cn(
-									'rounded-xl bg-blue-600 px-6 py-3 active:bg-blue-700',
+									'rounded-xl bg-primary px-6 py-3 active:opacity-80',
 									(!rating || status === 'saving' || myReview.loading || Boolean(myReview.error)) &&
 										'opacity-50',
 								)}
 							>
-								<Text className="font-bold text-sm text-white">
+								<Text className="font-bold text-primary-foreground text-sm">
 									{status === 'saving' ? 'Kaydediliyor...' : hasReview ? 'Güncelle' : 'Gönder'}
 								</Text>
 							</Pressable>
@@ -191,34 +208,36 @@ export function TutorReviews({
 								<Pressable
 									onPress={remove}
 									disabled={status === 'saving'}
-									className="rounded-xl px-4 py-3 active:bg-slate-100"
+									className="rounded-xl px-4 py-3 active:bg-muted"
 								>
-									<Text className="font-medium text-slate-600 text-sm">Değerlendirmemi sil</Text>
+									<Text className="font-medium text-muted-foreground text-sm">
+										Değerlendirmemi sil
+									</Text>
 								</Pressable>
 							) : null}
 						</View>
 						{status === 'saved' ? (
-							<Text className="mt-3 text-green-700 text-sm">
+							<Text className="mt-3 text-sm text-success">
 								Teşekkürler, değerlendirmeniz kaydedildi.
 							</Text>
 						) : null}
 						{status === 'error' ? (
-							<Text className="mt-3 text-red-600 text-sm">
+							<Text className="mt-3 text-destructive text-sm">
 								Bir sorun oluştu, lütfen tekrar deneyin.
 							</Text>
 						) : null}
 					</View>
 				)
 			) : (
-				<View className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
-					<Text className="text-slate-600 text-sm">
+				<View className="mb-6 rounded-xl border border-border bg-muted p-4">
+					<Text className="text-muted-foreground text-sm">
 						Değerlendirme yapmak için{' '}
 						<Link href={withAppReturn('/giris', returnPath)}>
-							<Text className="font-medium text-blue-600 underline">giriş yapın</Text>
+							<Text className="font-medium text-primary underline">giriş yapın</Text>
 						</Link>{' '}
 						veya{' '}
 						<Link href={withAppReturn('/kayit-ol', returnPath)}>
-							<Text className="font-medium text-blue-600 underline">üye olun</Text>
+							<Text className="font-medium text-primary underline">üye olun</Text>
 						</Link>
 						.
 					</Text>
@@ -226,14 +245,14 @@ export function TutorReviews({
 			)}
 
 			{publicReviews.loading && !publicReviews.data ? (
-				<ActivityIndicator size="small" color="#2563eb" />
+				<ActivityIndicator size="small" color={colors.primary} />
 			) : null}
 
 			{publicReviews.error ? (
-				<View className="gap-2 border-slate-100 border-t py-4">
-					<Text className="text-red-600 text-sm">Değerlendirmeler yüklenemedi.</Text>
+				<View className="gap-2 border-border border-t py-4">
+					<Text className="text-destructive text-sm">Değerlendirmeler yüklenemedi.</Text>
 					<Pressable onPress={publicReviews.reload} className="self-start active:opacity-70">
-						<Text className="font-semibold text-blue-600 text-sm">Tekrar dene</Text>
+						<Text className="font-semibold text-primary text-sm">Tekrar dene</Text>
 					</Pressable>
 				</View>
 			) : null}
@@ -241,14 +260,16 @@ export function TutorReviews({
 			{reviews.map((review, index) => (
 				<View
 					key={`${review.author}-${review.updatedAt}-${index}`}
-					className="border-slate-100 border-t py-4"
+					className="border-border border-t py-4"
 				>
 					<View className="mb-1 flex-row flex-wrap items-center gap-2">
 						<RatingStars rating={review.rating} />
-						<Text className="font-medium text-slate-900 text-sm">{review.author}</Text>
-						<Text className="text-slate-400 text-xs">{formatDateTR(review.updatedAt)}</Text>
+						<Text className="font-medium text-foreground text-sm">{review.author}</Text>
+						<Text className="text-muted-foreground text-xs">{formatDateTR(review.updatedAt)}</Text>
 					</View>
-					{review.comment ? <Text className="text-slate-600 text-sm">{review.comment}</Text> : null}
+					{review.comment ? (
+						<Text className="text-muted-foreground text-sm">{review.comment}</Text>
+					) : null}
 				</View>
 			))}
 		</View>

@@ -12,6 +12,7 @@ import { type ReactElement, useCallback, useEffect, useRef, useState } from 'rea
 import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { ReportRequestForm } from '@/components/features/deneme/report-request-form';
 import { SampleReport } from '@/components/features/deneme/sample-report';
+import { Reveal } from '@/components/shared/motion';
 import { RichText } from '@/components/shared/rich-text';
 import { EmptyState, ErrorState, LoadingState } from '@/components/shared/states';
 import { useAsync } from '@/hooks/use-async';
@@ -27,6 +28,7 @@ import {
 	submitDeneme,
 } from '@/lib/deneme';
 import { secureStorage } from '@/lib/storage';
+import { useThemeColors } from '@/lib/theme';
 import { cn, formatClock, formatNumberTR, generateUuid } from '@/lib/utils';
 
 type Stage = 'intro' | 'running' | 'result';
@@ -93,7 +95,7 @@ export default function DenemeScreen() {
 		return (
 			<>
 				<Stack.Screen options={{ title: 'Deneme bulunamadı' }} />
-				<View className="flex-1 items-center justify-center bg-slate-50">
+				<View className="flex-1 items-center justify-center bg-background">
 					<EmptyState
 						title="Deneme bulunamadı"
 						actionLabel="Deneme sınavlarına git"
@@ -232,56 +234,64 @@ function DenemeRunner({ deneme }: { deneme: DenemeDetail }) {
 		.join(' · ');
 
 	const heading = (
-		<View className="px-4 pt-4">
-			<Text className="font-medium text-blue-600 text-sm">{eyebrow}</Text>
-			<Text className="mt-1 font-bold text-2xl text-slate-900">{deneme.baslik}</Text>
-			{deneme.aciklama ? (
-				<Text className="mt-2 text-base text-slate-500 leading-relaxed">{deneme.aciklama}</Text>
-			) : null}
-		</View>
+		<Reveal delay={20} distance={10}>
+			<View className="px-4 pt-4">
+				<Text className="font-medium text-primary text-sm">{eyebrow}</Text>
+				<Text className="mt-1 font-bold text-2xl text-foreground">{deneme.baslik}</Text>
+				{deneme.aciklama ? (
+					<Text className="mt-2 text-base text-muted-foreground leading-relaxed">
+						{deneme.aciklama}
+					</Text>
+				) : null}
+			</View>
+		</Reveal>
 	);
 
 	return (
 		<>
 			<Stack.Screen options={{ title: deneme.baslik }} />
 			{stage === 'intro' ? (
-				<ScrollView className="flex-1 bg-slate-50" contentContainerStyle={{ paddingBottom: 16 }}>
+				<ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 16 }}>
 					{heading}
 					<View className="gap-4 p-4">
-						<View className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-							<View className="flex-row gap-3">
-								<Stat icon={FileQuestion} value={`${deneme.soruSayisi}`} label="soru" />
-								<Stat icon={Clock} value={`${deneme.sureDakika} dk`} label="süre" />
-								{deneme.cozenSayisi !== null ? (
-									<Stat
-										icon={Users}
-										value={formatNumberTR(deneme.cozenSayisi)}
-										label="öğrenci çözdü"
-									/>
-								) : null}
-							</View>
-							{deneme.konular.length > 0 ? (
-								<View className="mt-5">
-									<Text className="mb-2 font-semibold text-slate-900">Kapsadığı konular</Text>
-									<View className="flex-row flex-wrap gap-2">
-										{deneme.konular.map((konu) => (
-											<View key={konu.slug} className="rounded-full bg-blue-50 px-3 py-1">
-												<Text className="text-blue-700 text-sm">{konu.ad}</Text>
-											</View>
-										))}
-									</View>
+						<Reveal delay={70}>
+							<View className="rounded-2xl border border-border bg-card p-5 shadow-black/5 shadow-sm">
+								<View className="flex-row gap-3">
+									<Stat icon={FileQuestion} value={`${deneme.soruSayisi}`} label="soru" />
+									<Stat icon={Clock} value={`${deneme.sureDakika} dk`} label="süre" />
+									{deneme.cozenSayisi !== null ? (
+										<Stat
+											icon={Users}
+											value={formatNumberTR(deneme.cozenSayisi)}
+											label="öğrenci çözdü"
+										/>
+									) : null}
 								</View>
-							) : null}
-							<Pressable
-								onPress={start}
-								className="mt-6 items-center rounded-xl bg-blue-600 px-6 py-3.5 active:bg-blue-700"
-							>
-								<Text className="font-bold text-sm text-white">Kayıt gerekmez, hemen başla</Text>
-							</Pressable>
-							<Text className="mt-2 text-slate-500 text-sm">
-								Süre başla dediğinde başlar. Bitirince netin hemen görünür.
-							</Text>
-						</View>
+								{deneme.konular.length > 0 ? (
+									<View className="mt-5">
+										<Text className="mb-2 font-semibold text-foreground">Kapsadığı konular</Text>
+										<View className="flex-row flex-wrap gap-2">
+											{deneme.konular.map((konu) => (
+												<View key={konu.slug} className="rounded-full bg-accent px-3 py-1">
+													<Text className="text-primary text-sm">{konu.ad}</Text>
+												</View>
+											))}
+										</View>
+									</View>
+								) : null}
+								<Pressable
+									onPress={start}
+									className="mt-6 items-center rounded-xl bg-primary px-6 py-3.5 active:bg-primary/90"
+								>
+									<Text className="font-bold text-primary-foreground text-sm">
+										Kayıt gerekmez, hemen başla
+									</Text>
+								</Pressable>
+								<Text className="mt-2 text-muted-foreground text-sm">
+									Süre başla dediğinde başlar. Bitirince netin hemen görünür.
+								</Text>
+							</View>
+						</Reveal>
 						<SampleReport />
 					</View>
 				</ScrollView>
@@ -342,35 +352,36 @@ function RunningStage({
 	onGo: (index: number) => void;
 	onFinish: () => void;
 }) {
+	const colors = useThemeColors();
 	const question = deneme.sorular[current];
 	const urgent = remaining <= 60;
 
 	return (
 		<ScrollView
-			className="flex-1 bg-slate-50"
+			className="flex-1 bg-background"
 			contentContainerStyle={{ paddingBottom: 16 }}
 			stickyHeaderIndices={[1]}
 			pointerEvents={submitting ? 'none' : 'auto'}
 		>
 			{heading}
-			<View className="flex-row items-center justify-between gap-3 border-slate-200 border-b bg-white px-4 py-3">
+			<View className="flex-row items-center justify-between gap-3 border-border border-b bg-card px-4 py-3">
 				<View className="flex-1 flex-row items-center gap-2">
-					<Text className="font-semibold text-slate-900 text-sm">
+					<Text className="font-semibold text-foreground text-sm">
 						Soru {current + 1}/{total}
 					</Text>
-					<Text className="text-slate-500 text-sm">{answered} cevaplandı</Text>
+					<Text className="text-muted-foreground text-sm">{answered} cevaplandı</Text>
 				</View>
 				<View
 					className={cn(
 						'flex-row items-center gap-1 rounded-full px-3 py-1',
-						urgent ? 'bg-red-50' : 'bg-blue-50',
+						urgent ? 'bg-destructive/10' : 'bg-accent',
 					)}
 				>
-					<Clock size={14} color={urgent ? '#dc2626' : '#2563eb'} />
+					<Clock size={14} color={urgent ? colors.destructive : colors.primary} />
 					<Text
 						className={cn(
 							'font-mono font-semibold text-sm',
-							urgent ? 'text-red-600' : 'text-blue-600',
+							urgent ? 'text-destructive' : 'text-primary',
 						)}
 					>
 						{formatClock(remaining)}
@@ -380,108 +391,123 @@ function RunningStage({
 
 			{question ? (
 				<View className="gap-4 p-4">
-					<View className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-						<Text className="font-semibold text-slate-500 text-sm">{question.no}. soru</Text>
-						<View className="mt-3">
-							<RichText blocks={question.metin} />
-						</View>
-						{question.gorsel ? <MediaImage media={question.gorsel} className="mt-1" /> : null}
+					<Reveal key={current} delay={0} distance={10}>
+						<View className="rounded-2xl border border-border bg-card p-4 shadow-black/5 shadow-sm">
+							<Text className="font-semibold text-muted-foreground text-sm">
+								{question.no}. soru
+							</Text>
+							<View className="mt-3">
+								<RichText blocks={question.metin} />
+							</View>
+							{question.gorsel ? <MediaImage media={question.gorsel} className="mt-1" /> : null}
 
-						<View className="mt-3 gap-2">
-							{question.secenekler.map((secenek) => {
-								const selected = answers[current] === secenek.harf;
-								return (
-									<Pressable
-										key={secenek.harf}
-										onPress={() => onChoose(secenek.harf)}
-										className={cn(
-											'flex-row items-start gap-3 rounded-xl border-2 p-3',
-											selected
-												? 'border-blue-600 bg-blue-50'
-												: 'border-slate-200 bg-white active:bg-slate-50',
-										)}
-									>
-										<View
+							<View
+								accessibilityRole="radiogroup"
+								accessibilityLabel={`${current + 1}. soru seçenekleri`}
+								className="mt-3 gap-2"
+							>
+								{question.secenekler.map((secenek) => {
+									const selected = answers[current] === secenek.harf;
+									return (
+										<Pressable
+											key={secenek.harf}
+											accessibilityRole="radio"
+											accessibilityLabel={`${secenek.harf}. ${secenek.metin}`}
+											accessibilityState={{ checked: selected }}
+											aria-checked={selected}
+											onPress={() => onChoose(secenek.harf)}
 											className={cn(
-												'size-7 shrink-0 items-center justify-center rounded-full',
-												selected ? 'bg-blue-600' : 'bg-slate-100',
+												'flex-row items-start gap-3 rounded-xl border-2 p-3',
+												selected
+													? 'border-primary bg-accent'
+													: 'border-input bg-card active:bg-muted',
 											)}
 										>
-											<Text
+											<View
 												className={cn(
-													'font-bold text-sm',
-													selected ? 'text-white' : 'text-slate-900',
+													'size-7 shrink-0 items-center justify-center rounded-full',
+													selected ? 'bg-primary' : 'bg-muted',
 												)}
 											>
-												{secenek.harf}
-											</Text>
-										</View>
-										<View className="flex-1">
-											<Text className="text-base text-slate-900 leading-6">{secenek.metin}</Text>
-											{secenek.gorsel ? (
-												<MediaImage media={secenek.gorsel} className="mt-2" />
-											) : null}
-										</View>
-									</Pressable>
-								);
-							})}
-						</View>
-						<Text className="mt-2 text-slate-500 text-xs">
-							Seçili şıkka tekrar dokunursan soru boş kalır.
-						</Text>
+												<Text
+													className={cn(
+														'font-bold text-sm',
+														selected ? 'text-primary-foreground' : 'text-foreground',
+													)}
+												>
+													{secenek.harf}
+												</Text>
+											</View>
+											<View className="flex-1">
+												<Text className="text-base text-foreground leading-6">{secenek.metin}</Text>
+												{secenek.gorsel ? (
+													<MediaImage media={secenek.gorsel} className="mt-2" />
+												) : null}
+											</View>
+										</Pressable>
+									);
+								})}
+							</View>
+							<Text className="mt-2 text-muted-foreground text-xs">
+								Seçili şıkka tekrar dokunursan soru boş kalır.
+							</Text>
 
-						<View className="mt-6 flex-row items-center justify-between gap-2">
-							<Pressable
-								onPress={() => onGo(current - 1)}
-								disabled={current === 0}
-								className={cn(
-									'flex-row items-center gap-1 rounded-xl border px-4 py-2.5',
-									current === 0
-										? 'border-slate-100 bg-slate-50'
-										: 'border-slate-300 bg-white active:bg-slate-50',
-								)}
-							>
-								<ChevronLeft size={16} color={current === 0 ? '#cbd5e1' : '#334155'} />
-								<Text
+							<View className="mt-6 flex-row items-center justify-between gap-2">
+								<Pressable
+									onPress={() => onGo(current - 1)}
+									disabled={current === 0}
 									className={cn(
-										'font-semibold text-sm',
-										current === 0 ? 'text-slate-300' : 'text-slate-700',
+										'flex-row items-center gap-1 rounded-xl border px-4 py-2.5',
+										current === 0
+											? 'border-border bg-muted'
+											: 'border-input bg-card active:bg-muted',
 									)}
 								>
-									Önceki
-								</Text>
-							</Pressable>
-							{current < total - 1 ? (
-								<Pressable
-									onPress={() => onGo(current + 1)}
-									className="flex-row items-center gap-1 rounded-xl bg-blue-600 px-4 py-2.5 active:bg-blue-700"
-								>
-									<Text className="font-semibold text-sm text-white">Sonraki</Text>
-									<ChevronRight size={16} color="#ffffff" />
-								</Pressable>
-							) : (
-								<Pressable
-									onPress={onFinish}
-									disabled={submitting}
-									className={cn(
-										'rounded-xl px-4 py-2.5',
-										submitting ? 'bg-slate-300' : 'bg-blue-600 active:bg-blue-700',
-									)}
-								>
+									<ChevronLeft
+										size={16}
+										color={current === 0 ? colors.mutedForeground : colors.foreground}
+									/>
 									<Text
 										className={cn(
 											'font-semibold text-sm',
-											submitting ? 'text-slate-500' : 'text-white',
+											current === 0 ? 'text-muted-foreground' : 'text-foreground',
 										)}
 									>
-										{submitting ? 'Gönderiliyor...' : 'Sınavı bitir'}
+										Önceki
 									</Text>
 								</Pressable>
-							)}
+								{current < total - 1 ? (
+									<Pressable
+										onPress={() => onGo(current + 1)}
+										className="flex-row items-center gap-1 rounded-xl bg-primary px-4 py-2.5 active:bg-primary/90"
+									>
+										<Text className="font-semibold text-primary-foreground text-sm">Sonraki</Text>
+										<ChevronRight size={16} color={colors.primaryForeground} />
+									</Pressable>
+								) : (
+									<Pressable
+										onPress={onFinish}
+										disabled={submitting}
+										className={cn(
+											'rounded-xl px-4 py-2.5',
+											submitting ? 'bg-muted' : 'bg-primary active:bg-primary/90',
+										)}
+									>
+										<Text
+											className={cn(
+												'font-semibold text-sm',
+												submitting ? 'text-muted-foreground' : 'text-primary-foreground',
+											)}
+										>
+											{submitting ? 'Gönderiliyor...' : 'Sınavı bitir'}
+										</Text>
+									</Pressable>
+								)}
+							</View>
 						</View>
-					</View>
+					</Reveal>
 
-					<View className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+					<View className="rounded-2xl border border-border bg-card p-4 shadow-black/5 shadow-sm">
 						<View className="flex-row flex-wrap gap-2">
 							{deneme.sorular.map((soru, index) => {
 								const isAnswered = Boolean(answers[index]);
@@ -494,17 +520,17 @@ function RunningStage({
 										className={cn(
 											'size-9 items-center justify-center rounded-lg border-2',
 											isCurrent
-												? 'border-slate-900'
+												? 'border-foreground'
 												: isAnswered
-													? 'border-blue-600'
-													: 'border-slate-200',
-											isAnswered ? 'bg-blue-600' : 'bg-white',
+													? 'border-primary'
+													: 'border-input',
+											isAnswered ? 'bg-primary' : 'bg-card',
 										)}
 									>
 										<Text
 											className={cn(
 												'font-medium text-sm',
-												isAnswered ? 'text-white' : 'text-slate-700',
+												isAnswered ? 'text-primary-foreground' : 'text-muted-foreground',
 											)}
 										>
 											{soru.no}
@@ -514,7 +540,7 @@ function RunningStage({
 							})}
 						</View>
 						<View className="mt-4 flex-row flex-wrap items-center justify-between gap-3">
-							<Text className="text-slate-500 text-sm">
+							<Text className="text-muted-foreground text-sm">
 								{total - answered > 0
 									? `${total - answered} soru boş.`
 									: 'Bütün sorular cevaplandı.'}
@@ -523,21 +549,25 @@ function RunningStage({
 								onPress={onFinish}
 								disabled={submitting}
 								className={cn(
-									'rounded-xl px-4 py-2.5',
-									submitting ? 'bg-slate-200' : 'bg-slate-100 active:bg-slate-200',
+									'rounded-xl border border-input px-4 py-2.5',
+									submitting ? 'bg-secondary' : 'bg-muted active:bg-accent',
 								)}
 							>
 								<Text
 									className={cn(
 										'font-semibold text-sm',
-										submitting ? 'text-slate-400' : 'text-slate-900',
+										submitting ? 'text-muted-foreground' : 'text-foreground',
 									)}
 								>
 									{submitting ? 'Gönderiliyor...' : 'Sınavı bitir'}
 								</Text>
 							</Pressable>
 						</View>
-						{submitError ? <Text className="mt-3 text-red-600 text-sm">{submitError}</Text> : null}
+						{submitError ? (
+							<View className="mt-3 rounded-xl bg-destructive/10 p-3">
+								<Text className="text-destructive text-sm">{submitError}</Text>
+							</View>
+						) : null}
 					</View>
 				</View>
 			) : null}
@@ -556,79 +586,88 @@ function ResultStage({
 }) {
 	const router = useRouter();
 	const [choice, setChoice] = useState<'ask' | 'yes' | 'no'>('ask');
+	const colors = useThemeColors();
 
 	return (
-		<ScrollView className="flex-1 bg-slate-50" contentContainerStyle={{ paddingBottom: 16 }}>
+		<ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 16 }}>
 			{heading}
 			<View className="gap-4 p-4">
-				<View className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-					<Text className="font-bold text-2xl text-slate-900">Sonucun</Text>
-					<View className="mt-4 flex-row gap-3">
-						<ResultStat label="Net" value={formatNumberTR(result.net)} highlight />
-						<ResultStat label="Doğru" value={result.dogru} />
-						<ResultStat label="Yanlış" value={result.yanlis} />
-						<ResultStat label="Boş" value={result.bos} />
+				<Reveal delay={70}>
+					<View className="rounded-2xl border border-border bg-card p-5 shadow-black/5 shadow-sm">
+						<Text className="font-bold text-2xl text-foreground">Sonucun</Text>
+						<View className="mt-4 flex-row gap-3">
+							<ResultStat label="Net" value={formatNumberTR(result.net)} highlight />
+							<ResultStat label="Doğru" value={result.dogru} />
+							<ResultStat label="Yanlış" value={result.yanlis} />
+							<ResultStat label="Boş" value={result.bos} />
+						</View>
 					</View>
-				</View>
+				</Reveal>
 
-				<View className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
-					<Text className="font-bold text-slate-900 text-xl">
-						Geniş analiz raporunu ister misin?
-					</Text>
-					<Text className="mt-1 text-slate-600 text-sm">
-						Ücretsiz. Sonuçlarını Çağlar Hoca'nın gözünden inceleyip PDF olarak hemen burada
-						hazırlıyoruz.
-					</Text>
-					<View className="mt-3 gap-1.5">
-						{ANALIZ_MADDELERI.map((item) => (
-							<View key={item} className="flex-row gap-2">
-								<View className="mt-0.5 shrink-0">
-									<CheckCircle2 size={16} color="#2563eb" />
+				<Reveal delay={120}>
+					<View className="rounded-2xl border border-border bg-accent p-5">
+						<Text className="font-bold text-foreground text-xl">
+							Geniş analiz raporunu ister misin?
+						</Text>
+						<Text className="mt-1 text-muted-foreground text-sm">
+							Ücretsiz. Sonuçlarını Çağlar Hoca'nın gözünden inceleyip PDF olarak hemen burada
+							hazırlıyoruz.
+						</Text>
+						<View className="mt-3 gap-1.5">
+							{ANALIZ_MADDELERI.map((item) => (
+								<View key={item} className="flex-row gap-2">
+									<View className="mt-0.5 shrink-0">
+										<CheckCircle2 size={16} color={colors.primary} />
+									</View>
+									<Text className="flex-1 text-foreground text-sm">{item}</Text>
 								</View>
-								<Text className="flex-1 text-slate-900 text-sm">{item}</Text>
+							))}
+						</View>
+
+						{choice === 'ask' ? (
+							<View className="mt-5 gap-3">
+								<Pressable
+									onPress={() => setChoice('yes')}
+									className="items-center rounded-xl bg-primary px-6 py-3.5 active:bg-primary/90"
+								>
+									<Text className="font-bold text-primary-foreground text-sm">
+										Evet, raporu istiyorum
+									</Text>
+								</Pressable>
+								<Pressable
+									onPress={() => setChoice('no')}
+									className="items-center rounded-xl border border-input bg-card px-6 py-3.5 active:bg-muted"
+								>
+									<Text className="font-bold text-foreground text-sm">Hayır, teşekkürler</Text>
+								</Pressable>
 							</View>
-						))}
+						) : null}
+
+						{choice === 'no' ? (
+							<View className="mt-5 flex-row flex-wrap items-center gap-3">
+								<Pressable
+									onPress={() => router.push('/courses')}
+									className="rounded-xl bg-primary px-4 py-2.5 active:bg-primary/90"
+								>
+									<Text className="font-bold text-primary-foreground text-sm">Derslere göz at</Text>
+								</Pressable>
+								<Pressable
+									onPress={() => router.push('/deneme-sinavlari')}
+									className="active:opacity-70"
+								>
+									<Text className="text-muted-foreground text-sm underline">
+										Başka bir deneme çöz
+									</Text>
+								</Pressable>
+								<Pressable onPress={() => setChoice('yes')} className="active:opacity-70">
+									<Text className="text-primary text-sm underline">
+										Fikrimi değiştirdim, raporu istiyorum
+									</Text>
+								</Pressable>
+							</View>
+						) : null}
 					</View>
-
-					{choice === 'ask' ? (
-						<View className="mt-5 gap-3">
-							<Pressable
-								onPress={() => setChoice('yes')}
-								className="items-center rounded-xl bg-blue-600 px-6 py-3.5 active:bg-blue-700"
-							>
-								<Text className="font-bold text-sm text-white">Evet, raporu istiyorum</Text>
-							</Pressable>
-							<Pressable
-								onPress={() => setChoice('no')}
-								className="items-center rounded-xl border border-slate-300 bg-white px-6 py-3.5 active:bg-slate-50"
-							>
-								<Text className="font-bold text-slate-900 text-sm">Hayır, teşekkürler</Text>
-							</Pressable>
-						</View>
-					) : null}
-
-					{choice === 'no' ? (
-						<View className="mt-5 flex-row flex-wrap items-center gap-3">
-							<Pressable
-								onPress={() => router.push('/courses')}
-								className="rounded-xl bg-blue-600 px-4 py-2.5 active:bg-blue-700"
-							>
-								<Text className="font-bold text-sm text-white">Derslere göz at</Text>
-							</Pressable>
-							<Pressable
-								onPress={() => router.push('/deneme-sinavlari')}
-								className="active:opacity-70"
-							>
-								<Text className="text-slate-600 text-sm underline">Başka bir deneme çöz</Text>
-							</Pressable>
-							<Pressable onPress={() => setChoice('yes')} className="active:opacity-70">
-								<Text className="text-blue-600 text-sm underline">
-									Fikrimi değiştirdim, raporu istiyorum
-								</Text>
-							</Pressable>
-						</View>
-					) : null}
-				</View>
+				</Reveal>
 
 				{choice === 'yes' ? (
 					<ReportRequestForm
@@ -664,11 +703,12 @@ function MediaImage({ media, className }: { media: Media; className?: string }) 
 }
 
 function Stat({ icon: Icon, value, label }: { icon: LucideIcon; value: string; label: string }) {
+	const colors = useThemeColors();
 	return (
-		<View className="flex-1 items-center rounded-xl bg-slate-100 p-3">
-			<Icon size={16} color="#2563eb" />
-			<Text className="mt-1 font-bold text-lg text-slate-900">{value}</Text>
-			<Text className="text-center text-slate-500 text-xs">{label}</Text>
+		<View className="flex-1 items-center rounded-xl bg-muted p-3">
+			<Icon size={16} color={colors.primary} />
+			<Text className="mt-1 font-bold text-foreground text-lg">{value}</Text>
+			<Text className="text-center text-muted-foreground text-xs">{label}</Text>
 		</View>
 	);
 }
@@ -684,15 +724,21 @@ function ResultStat({
 }) {
 	return (
 		<View
-			className={cn(
-				'flex-1 items-center rounded-xl p-3',
-				highlight ? 'bg-blue-600' : 'bg-slate-100',
-			)}
+			className={cn('flex-1 items-center rounded-xl p-3', highlight ? 'bg-primary' : 'bg-muted')}
 		>
-			<Text className={cn('font-bold text-xl', highlight ? 'text-white' : 'text-slate-900')}>
+			<Text
+				className={cn(
+					'font-bold text-xl',
+					highlight ? 'text-primary-foreground' : 'text-foreground',
+				)}
+			>
 				{value}
 			</Text>
-			<Text className={cn('text-xs', highlight ? 'text-blue-100' : 'text-slate-500')}>{label}</Text>
+			<Text
+				className={cn('text-xs', highlight ? 'text-primary-foreground' : 'text-muted-foreground')}
+			>
+				{label}
+			</Text>
 		</View>
 	);
 }

@@ -1,6 +1,7 @@
 import { Stack, useRouter } from 'expo-router';
 import { ScrollView, Text, View } from 'react-native';
 import { CourseCard } from '@/components/shared/course-card';
+import { Reveal } from '@/components/shared/motion';
 import { EmptyState, ErrorState, LoadingState } from '@/components/shared/states';
 import { useAsync } from '@/hooks/use-async';
 import { withAppReturn } from '@/lib/routes';
@@ -43,7 +44,7 @@ export default function DerslerimScreen() {
 		<>
 			<Stack.Screen options={{ title: 'Derslerim' }} />
 			{!jwt ? (
-				<View className="flex-1 justify-center bg-slate-50">
+				<View className="flex-1 justify-center bg-background">
 					<EmptyState
 						title="Derslerinizi görmek için giriş yapmanız gerekiyor."
 						actionLabel="Giriş Yap"
@@ -55,11 +56,14 @@ export default function DerslerimScreen() {
 			) : error ? (
 				<ErrorState message="Veriler yüklenirken bir hata oluştu" onRetry={reload} />
 			) : (
-				<ScrollView className="flex-1 bg-slate-50">
+				<ScrollView className="flex-1 bg-background">
 					<View className="gap-4 p-4">
-						<Text className="text-center text-lg text-slate-600">
-							Başladığın derslerin ve ilerleme durumun
-						</Text>
+						<Reveal delay={20}>
+							<Text className="text-center text-lg text-muted-foreground">
+								Başladığın derslerin ve ilerleme durumun
+							</Text>
+						</Reveal>
+
 						{data && data.courses.length > 0 ? (
 							data.courses.map((course) => (
 								<CourseCard

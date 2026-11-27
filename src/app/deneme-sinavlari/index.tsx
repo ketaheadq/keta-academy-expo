@@ -2,6 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { DenemeCard } from '@/components/features/deneme/deneme-card';
+import { Reveal } from '@/components/shared/motion';
 import { EmptyState, ErrorState, LoadingState } from '@/components/shared/states';
 import { useAsync } from '@/hooks/use-async';
 import { type DenemeSummary, getDenemeler, SINAV_TURU_LABEL } from '@/lib/deneme';
@@ -60,16 +61,21 @@ export default function DenemeSinavlariScreen() {
 			) : error ? (
 				<ErrorState message={error} onRetry={reload} />
 			) : (
-				<ScrollView className="flex-1 bg-slate-50" contentContainerStyle={{ padding: 16, gap: 16 }}>
-					<View>
-						<Text className="font-extrabold text-2xl text-slate-900">
-							Ücretsiz Deneme Sınavları
-						</Text>
-						<Text className="mt-2 text-base text-slate-500 leading-relaxed">
-							Kayıt olmadan çöz, netini hemen gör. Hangi konularda eksik olduğunu gösteren detaylı
-							raporu telefonuna gönderelim.
-						</Text>
-					</View>
+				<ScrollView
+					className="flex-1 bg-background"
+					contentContainerStyle={{ padding: 16, gap: 16 }}
+				>
+					<Reveal delay={20}>
+						<View>
+							<Text className="font-extrabold text-2xl text-foreground">
+								Ücretsiz Deneme Sınavları
+							</Text>
+							<Text className="mt-2 text-base text-muted-foreground leading-relaxed">
+								Kayıt olmadan çöz, netini hemen gör. Hangi konularda eksik olduğunu gösteren detaylı
+								raporu telefonuna gönderelim.
+							</Text>
+						</View>
+					</Reveal>
 
 					{denemeler.length === 0 ? (
 						<EmptyState title="Henüz deneme sınavı yok" />
@@ -84,14 +90,16 @@ export default function DenemeSinavlariScreen() {
 												key={option.label}
 												onPress={() => setFilter(option.filter)}
 												className={cn(
-													'rounded-full px-4 py-2',
-													active ? 'bg-blue-600' : 'bg-slate-200 active:bg-slate-300',
+													'rounded-full border px-4 py-2',
+													active
+														? 'border-primary bg-primary'
+														: 'border-input bg-secondary active:bg-accent',
 												)}
 											>
 												<Text
 													className={cn(
 														'font-medium text-sm',
-														active ? 'text-white' : 'text-slate-600',
+														active ? 'text-primary-foreground' : 'text-secondary-foreground',
 													)}
 												>
 													{option.label}
@@ -113,8 +121,8 @@ export default function DenemeSinavlariScreen() {
 									))}
 								</View>
 							) : (
-								<View className="rounded-xl border border-slate-200 bg-white p-8">
-									<Text className="text-center text-slate-500 text-sm">
+								<View className="rounded-xl border border-border bg-card p-8">
+									<Text className="text-center text-muted-foreground text-sm">
 										Bu filtrede henüz deneme yok. Yakında eklenecek.
 									</Text>
 								</View>

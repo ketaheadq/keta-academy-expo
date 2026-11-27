@@ -3,6 +3,7 @@ import type * as React from 'react';
 import { Alert, Image, Linking, Text, type TextStyle, View } from 'react-native';
 import { appHref, toAppRoute } from '@/lib/routes';
 import { mediaUrl, type StrapiBlock } from '@/lib/strapi';
+import { type AppTheme, useThemeColors } from '@/lib/theme';
 
 type InlineChild = {
 	type?: string;
@@ -16,7 +17,7 @@ type InlineChild = {
 	children?: InlineChild[];
 };
 
-function inlineStyle(child: InlineChild): TextStyle {
+function inlineStyle(child: InlineChild, colors: AppTheme): TextStyle {
 	const style: TextStyle = {};
 	if (child.bold) style.fontWeight = '700';
 	if (child.italic) style.fontStyle = 'italic';
@@ -29,7 +30,7 @@ function inlineStyle(child: InlineChild): TextStyle {
 
 	if (child.code) {
 		style.fontFamily = 'monospace';
-		style.backgroundColor = 'rgba(148, 163, 184, 0.18)';
+		style.backgroundColor = colors.muted;
 	}
 	return style;
 }
@@ -60,7 +61,11 @@ function openLink(url: string) {
 	}
 }
 
-function renderInline(children: InlineChild[] | undefined, keyPrefix: string): React.ReactNode[] {
+function renderInline(
+	children: InlineChild[] | undefined,
+	keyPrefix: string,
+	colors: AppTheme,
+): React.ReactNode[] {
 	if (!Array.isArray(children)) return [];
 
 	const nodes: React.ReactNode[] = [];
@@ -71,24 +76,27 @@ function renderInline(children: InlineChild[] | undefined, keyPrefix: string): R
 			nodes.push(
 				<Text
 					key={key}
-					style={[{ color: '#2563eb', textDecorationLine: 'underline' }, inlineStyle(child)]}
+					style={[
+						{ color: colors.primary, textDecorationLine: 'underline' },
+						inlineStyle(child, colors),
+					]}
 					onPress={() => openLink(url)}
 				>
-					{renderInline(child.children as InlineChild[] | undefined, key)}
+					{renderInline(child.children as InlineChild[] | undefined, key, colors)}
 				</Text>,
 			);
 			return;
 		}
 		if (Array.isArray(child.children) && child.children.length) {
 			nodes.push(
-				<Text key={key} style={inlineStyle(child)}>
-					{renderInline(child.children as InlineChild[], key)}
+				<Text key={key} style={inlineStyle(child, colors)}>
+					{renderInline(child.children as InlineChild[], key, colors)}
 				</Text>,
 			);
 			return;
 		}
 		nodes.push(
-			<Text key={key} style={inlineStyle(child)}>
+			<Text key={key} style={inlineStyle(child, colors)}>
 				{child.text ?? ''}
 			</Text>,
 		);
@@ -106,6 +114,7 @@ const HEADING_CLASS: Record<number, string> = {
 };
 
 function Block({ block, index }: { block: StrapiBlock; index: number }) {
+	const colors = useThemeColors();
 	const children = block.children as InlineChild[] | undefined;
 	const key = `block-${index}`;
 
@@ -114,7 +123,7 @@ function Block({ block, index }: { block: StrapiBlock; index: number }) {
 			const level = typeof block.level === 'number' ? block.level : 2;
 			return (
 				<Text className={HEADING_CLASS[level] ?? HEADING_CLASS[2]}>
-					{renderInline(children, key)}
+					{renderInline(children, key, colors)}
 				</Text>
 			);
 		}
@@ -130,7 +139,11 @@ function Block({ block, index }: { block: StrapiBlock; index: number }) {
 								{ordered ? `${itemIndex + 1}.` : '•'}
 							</Text>
 							<Text className="flex-1 text-base text-muted-foreground leading-6">
-								{renderInline(item.children as InlineChild[] | undefined, `${key}-${itemIndex}`)}
+								{renderInline(
+									item.children as InlineChild[] | undefined,
+									`${key}-${itemIndex}`,
+									colors,
+								)}
 							</Text>
 						</View>
 					))}
@@ -140,9 +153,9 @@ function Block({ block, index }: { block: StrapiBlock; index: number }) {
 
 		case 'quote':
 			return (
-				<View className="mb-4 border-blue-500 border-l-4 bg-slate-50 py-2 pl-4">
-					<Text className="text-base text-slate-600 italic leading-6">
-						{renderInline(children, key)}
+				<View className="mb-4 border-primary border-l-4 bg-muted py-2 pl-4">
+					<Text className="text-base text-muted-foreground italic leading-6">
+						{renderInline(children, key, colors)}
 					</Text>
 				</View>
 			);
@@ -150,7 +163,9 @@ function Block({ block, index }: { block: StrapiBlock; index: number }) {
 		case 'code':
 			return (
 				<View className="mb-4 rounded-xl bg-slate-900 p-4">
-					<Text className="font-mono text-slate-100 text-sm">{renderInline(children, key)}</Text>
+					<Text className="font-mono text-slate-100 text-sm">
+						{renderInline(children, key, colors)}
+					</Text>
 				</View>
 			);
 
@@ -186,7 +201,7 @@ function Block({ block, index }: { block: StrapiBlock; index: number }) {
 		default:
 			return (
 				<Text className="mb-4 text-base text-muted-foreground leading-6">
-					{renderInline(children, key)}
+					{renderInline(children, key, colors)}
 				</Text>
 			);
 	}

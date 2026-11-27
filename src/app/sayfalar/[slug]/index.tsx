@@ -17,6 +17,7 @@ import {
 	type StrapiPage,
 	type StrapiVideo,
 } from '@/lib/strapi';
+import { useThemeColors } from '@/lib/theme';
 import { normalizeTurkish } from '@/lib/utils';
 
 type ListingData =
@@ -50,6 +51,7 @@ function ItemListing<T extends ListableItem>({
 	emptyIcon?: typeof GraduationCap;
 	renderItem: (item: T) => ReactElement;
 }) {
+	const colors = useThemeColors();
 	const term = normalizeTurkish(search.trim());
 	const filtered = term
 		? items.filter((item) => normalizeTurkish(item.title).includes(term))
@@ -70,14 +72,15 @@ function ItemListing<T extends ListableItem>({
 			renderItem={({ item }) => renderItem(item)}
 			ListHeaderComponent={
 				<View>
-					<View className="mb-4 flex-row items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2.5">
-						<Search size={16} color="#94a3b8" />
+					<View className="mb-4 flex-row items-center gap-2 rounded-full border border-input bg-card px-4 py-2.5">
+						<Search size={16} color={colors.mutedForeground} />
 						<TextInput
+							accessibilityLabel="Liste içinde ara"
 							value={search}
 							onChangeText={onSearchChange}
 							placeholder="Ara..."
-							placeholderTextColor="#94a3b8"
-							className="flex-1 text-slate-900 text-sm"
+							placeholderTextColor={colors.mutedForeground}
+							className="flex-1 text-foreground text-sm"
 						/>
 					</View>
 					{popular.length > 0 ? (
@@ -187,8 +190,8 @@ export default function SayfaListeScreen() {
 			case 'tools':
 				content = (
 					<View className="items-center px-6 py-16">
-						<Text className="font-bold text-slate-900 text-xl">Hesaplama Araçları</Text>
-						<Text className="mt-2 text-center text-slate-500">
+						<Text className="font-bold text-foreground text-xl">Hesaplama Araçları</Text>
+						<Text className="mt-2 text-center text-muted-foreground">
 							Calculation tools will be implemented here
 						</Text>
 					</View>
@@ -197,14 +200,14 @@ export default function SayfaListeScreen() {
 			default:
 				content = (
 					<View className="items-center px-6 py-16">
-						<Text className="text-center text-lg text-slate-500">Sayfa yüklenemedi.</Text>
+						<Text className="text-center text-lg text-muted-foreground">Sayfa yüklenemedi.</Text>
 					</View>
 				);
 		}
 	}
 
 	return (
-		<View className="flex-1 bg-white">
+		<View className="flex-1 bg-background">
 			<Stack.Screen options={{ title: data?.page.title ?? 'Sayfalar' }} />
 			{content}
 		</View>

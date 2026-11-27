@@ -12,6 +12,15 @@ import {
 } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import Animated, {
+	useAnimatedStyle,
+	useReducedMotion,
+	useSharedValue,
+	withSequence,
+	withSpring,
+	withTiming,
+} from 'react-native-reanimated';
+import { AnimatedProgress, Celebration, Reveal } from '@/components/shared/motion';
 import { RichText } from '@/components/shared/rich-text';
 import {
 	type QuizResult,
@@ -20,6 +29,7 @@ import {
 	type StrapiQuiz,
 	submitQuiz,
 } from '@/lib/strapi';
+import { useThemeColors } from '@/lib/theme';
 import { cn, formatClock, generateUuid } from '@/lib/utils';
 
 interface QuizModalProps {
@@ -30,6 +40,8 @@ interface QuizModalProps {
 }
 
 export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProps) {
+	const colors = useThemeColors();
+	const reduceMotion = useReducedMotion();
 	const [currentIndex, setCurrentIndex] = useState(0);
 	const [answers, setAnswers] = useState<Record<number, number>>({});
 	const [result, setResult] = useState<QuizResult | null>(null);
@@ -110,18 +122,24 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 		}
 	}, [visible, remainingSeconds, result, isSubmitting, handleSubmit]);
 
+	const timeExpiring = remainingSeconds !== null && remainingSeconds <= 10;
+
 	return (
-		<Modal visible={visible} animationType="slide" onRequestClose={onClose}>
-			<View className="flex-1 bg-white">
-				<View className="gap-3 border-slate-100 border-b px-5 pt-3 pb-4">
+		<Modal
+			visible={visible}
+			animationType={reduceMotion ? 'none' : 'slide'}
+			onRequestClose={onClose}
+		>
+			<View className="flex-1 bg-background">
+				<View className="gap-3 border-border border-b bg-card px-5 pt-3 pb-4">
 					<View className="flex-row items-start gap-3">
 						<View className="flex-1 gap-1">
 							<View className="flex-row items-center gap-2">
-								<Target size={20} color="#0f172a" />
-								<Text className="flex-1 font-bold text-lg text-slate-900">{quiz.title}</Text>
+								<Target size={20} color={colors.primary} />
+								<Text className="flex-1 font-bold text-foreground text-lg">{quiz.title}</Text>
 							</View>
 							{quiz.description ? (
-								<Text className="text-slate-500 text-sm">{quiz.description}</Text>
+								<Text className="text-muted-foreground text-sm">{quiz.description}</Text>
 							) : null}
 						</View>
 						<Pressable
@@ -129,9 +147,9 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 							disabled={isSubmitting}
 							accessibilityRole="button"
 							accessibilityLabel="Quizi kapat"
-							className="rounded-full bg-slate-100 p-2 active:bg-slate-200"
+							className="rounded-full bg-muted p-2 active:bg-secondary"
 						>
-							<X size={18} color="#475569" />
+							<X size={18} color={colors.mutedForeground} />
 						</Pressable>
 					</View>
 					{result ? null : (
@@ -139,26 +157,33 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 							<View className="flex-row items-center justify-between">
 								{timeSeconds ? (
 									<View className="flex-row items-center gap-1.5">
-										<Clock size={14} color="#64748b" />
-										<Text className="text-slate-500 text-sm">
+										<Clock
+											size={14}
+											color={timeExpiring ? colors.destructive : colors.mutedForeground}
+										/>
+										<Text
+											className={cn(
+												'text-sm',
+												timeExpiring ? 'text-destructive' : 'text-muted-foreground',
+											)}
+										>
 											{formatClock(remainingSeconds ?? timeSeconds)}
 										</Text>
 									</View>
 								) : (
 									<View />
 								)}
-								<View className="rounded-full border border-slate-200 px-2.5 py-1">
-									<Text className="font-semibold text-slate-600 text-xs">
+								<View className="rounded-full border border-input px-2.5 py-1">
+									<Text className="font-semibold text-muted-foreground text-xs">
 										{currentIndex + 1} / {totalQuestions}
 									</Text>
 								</View>
 							</View>
-							<View className="h-2 overflow-hidden rounded-full bg-slate-100">
-								<View
-									className="h-full rounded-full bg-blue-600"
-									style={{ width: `${progress}%` }}
-								/>
-							</View>
+							<AnimatedProgress
+								progress={progress}
+								className="h-2"
+								accessibilityLabel="Quiz ilerlemesi"
+							/>
 						</>
 					)}
 				</View>
@@ -171,47 +196,56 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 						contentContainerStyle={{ padding: 20, paddingBottom: 40, gap: 16 }}
 						pointerEvents={isSubmitting ? 'none' : 'auto'}
 					>
-						<View className="flex-row gap-3">
-							<View className="h-7 w-7 items-center justify-center rounded-lg bg-blue-600">
-								<Text className="font-bold text-sm text-white">{currentIndex + 1}</Text>
-							</View>
-							<View className="flex-1">
-								<RichText blocks={question.text} />
-							</View>
-						</View>
+						<Reveal key={question.id}>
+							<View className="gap-4">
+								<View className="flex-row gap-3">
+									<View className="h-7 w-7 items-center justify-center rounded-lg bg-primary">
+										<Text className="font-bold text-primary-foreground text-sm">
+											{currentIndex + 1}
+										</Text>
+									</View>
+									<View className="flex-1">
+										<RichText blocks={question.text} />
+									</View>
+								</View>
 
-						<View className="gap-3">
-							{options.map((option) => (
-								<OptionRow
-									key={option.id}
-									option={option}
-									selected={answers[question.id] === option.id}
-									disabled={isSubmitting || remainingSeconds === 0}
-									onSelect={() => setAnswers((prev) => ({ ...prev, [question.id]: option.id }))}
-								/>
-							))}
-						</View>
+								<View className="gap-3">
+									{options.map((option, index) => (
+										<Reveal key={option.id} delay={index * 45} distance={8}>
+											<OptionRow
+												option={option}
+												selected={answers[question.id] === option.id}
+												disabled={isSubmitting || remainingSeconds === 0}
+												onSelect={() =>
+													setAnswers((prev) => ({ ...prev, [question.id]: option.id }))
+												}
+											/>
+										</Reveal>
+									))}
+								</View>
+							</View>
+						</Reveal>
 
 						<View className="flex-row items-center gap-2">
-							<Text className="text-slate-500 text-sm">Puan: 1</Text>
+							<Text className="text-muted-foreground text-sm">Puan: 1</Text>
 							{answers[question.id] !== undefined ? (
-								<View className="flex-row items-center gap-1 rounded-full bg-slate-100 px-2.5 py-1">
-									<CheckCircle size={12} color="#16a34a" />
-									<Text className="font-semibold text-slate-600 text-xs">Cevaplanmış</Text>
+								<View className="flex-row items-center gap-1 rounded-full bg-success/10 px-2.5 py-1">
+									<CheckCircle size={12} color={colors.success} />
+									<Text className="font-semibold text-success text-xs">Cevaplanmış</Text>
 								</View>
 							) : null}
 						</View>
 
 						{submitError ? (
 							<View className="gap-2">
-								<Text className="text-red-600 text-sm">{submitError}</Text>
+								<Text className="text-destructive text-sm">{submitError}</Text>
 								{remainingSeconds !== 0 || allAnswered ? (
 									<Pressable
 										onPress={() => void handleSubmit(true)}
 										disabled={isSubmitting}
-										className="self-start rounded-full border border-slate-300 px-4 py-2 active:bg-slate-50"
+										className="self-start rounded-full border border-input bg-card px-4 py-2 active:bg-muted"
 									>
-										<Text className="font-semibold text-slate-700 text-sm">
+										<Text className="font-semibold text-foreground text-sm">
 											Gönderimi tekrar dene
 										</Text>
 									</Pressable>
@@ -222,8 +256,8 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 						<View className="items-center gap-3">
 							{!allAnswered && remainingSeconds !== 0 ? (
 								<View className="flex-row items-center gap-1.5">
-									<AlertCircle size={14} color="#d97706" />
-									<Text className="text-amber-600 text-sm">
+									<AlertCircle size={14} color={colors.warning} />
+									<Text className="text-sm text-warning">
 										Göndermek için tüm soruları cevaplayın
 									</Text>
 								</View>
@@ -232,25 +266,28 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 								<Pressable
 									disabled={currentIndex === 0 || isSubmitting || remainingSeconds === 0}
 									onPress={() => setCurrentIndex((i) => i - 1)}
+									accessibilityRole="button"
+									accessibilityLabel="Önceki soru"
 									className={cn(
-										'flex-row items-center gap-2 rounded-xl border border-slate-200 px-5 py-3 active:bg-slate-50',
+										'flex-row items-center gap-2 rounded-xl border border-input bg-card px-5 py-3 active:bg-muted',
 										currentIndex === 0 && 'opacity-40',
 									)}
 								>
-									<ArrowLeft size={16} color="#475569" />
-									<Text className="font-semibold text-slate-700 text-sm">Önceki</Text>
+									<ArrowLeft size={16} color={colors.mutedForeground} />
+									<Text className="font-semibold text-foreground text-sm">Önceki</Text>
 								</Pressable>
 								{currentIndex === totalQuestions - 1 ? (
 									<Pressable
 										disabled={!allAnswered || isSubmitting}
 										onPress={() => void handleSubmit()}
+										accessibilityRole="button"
 										className={cn(
-											'flex-row items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 active:bg-blue-700',
+											'flex-row items-center gap-2 rounded-xl bg-primary px-5 py-3 active:bg-primary/90',
 											(!allAnswered || isSubmitting) && 'opacity-40',
 										)}
 									>
-										<Trophy size={16} color="#ffffff" />
-										<Text className="font-semibold text-sm text-white">
+										<Trophy size={16} color={colors.primaryForeground} />
+										<Text className="font-semibold text-primary-foreground text-sm">
 											{isSubmitting ? 'Gönderiliyor...' : 'Quizi Gönder'}
 										</Text>
 									</Pressable>
@@ -258,10 +295,12 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 									<Pressable
 										onPress={() => setCurrentIndex((i) => i + 1)}
 										disabled={isSubmitting || remainingSeconds === 0}
-										className="flex-row items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 active:bg-blue-700 disabled:opacity-40"
+										accessibilityRole="button"
+										accessibilityLabel="Sonraki soru"
+										className="flex-row items-center gap-2 rounded-xl bg-primary px-5 py-3 active:bg-primary/90 disabled:opacity-40"
 									>
-										<Text className="font-semibold text-sm text-white">Sonraki</Text>
-										<ArrowRight size={16} color="#ffffff" />
+										<Text className="font-semibold text-primary-foreground text-sm">Sonraki</Text>
+										<ArrowRight size={16} color={colors.primaryForeground} />
 									</Pressable>
 								)}
 							</View>
@@ -284,33 +323,53 @@ function OptionRow({
 	disabled: boolean;
 	onSelect: () => void;
 }) {
+	const reduceMotion = useReducedMotion();
+	const scale = useSharedValue(1);
+
+	useEffect(() => {
+		if (!selected || disabled || reduceMotion) {
+			scale.value = 1;
+			return;
+		}
+		scale.value = withSequence(
+			withTiming(0.97, { duration: 90 }),
+			withSpring(1, { damping: 14, stiffness: 240 }),
+		);
+	}, [disabled, reduceMotion, scale, selected]);
+
+	const animatedStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
 	return (
-		<Pressable
-			onPress={onSelect}
-			disabled={disabled}
-			className={cn(
-				'flex-row items-center gap-3 rounded-xl border p-4',
-				selected ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-white active:bg-slate-50',
-				disabled && 'opacity-60',
-			)}
-		>
-			<View
+		<Animated.View style={animatedStyle}>
+			<Pressable
+				onPress={onSelect}
+				disabled={disabled}
+				accessibilityRole="radio"
+				accessibilityState={{ checked: selected, disabled }}
 				className={cn(
-					'size-5 items-center justify-center rounded-full border-2',
-					selected ? 'border-blue-600' : 'border-slate-300',
+					'flex-row items-center gap-3 rounded-xl border p-4',
+					selected ? 'border-primary bg-accent' : 'border-input bg-card active:bg-muted',
+					disabled && 'opacity-60',
 				)}
 			>
-				{selected ? <View className="size-2.5 rounded-full bg-blue-600" /> : null}
-			</View>
-			<Text
-				className={cn(
-					'flex-1 text-base',
-					selected ? 'font-semibold text-blue-900' : 'text-slate-700',
-				)}
-			>
-				{option.text}
-			</Text>
-		</Pressable>
+				<View
+					className={cn(
+						'size-5 items-center justify-center rounded-full border-2',
+						selected ? 'border-primary' : 'border-input',
+					)}
+				>
+					{selected ? <View className="size-2.5 rounded-full bg-primary" /> : null}
+				</View>
+				<Text
+					className={cn(
+						'flex-1 text-base',
+						selected ? 'font-semibold text-foreground' : 'text-foreground',
+					)}
+				>
+					{option.text}
+				</Text>
+			</Pressable>
+		</Animated.View>
 	);
 }
 
@@ -325,78 +384,134 @@ function ResultScreen({
 	onRetake: () => void;
 	onClose: () => void;
 }) {
+	const colors = useThemeColors();
+
 	return (
 		<ScrollView
 			className="flex-1"
 			contentContainerStyle={{ padding: 20, paddingBottom: 40, gap: 20 }}
 		>
-			<View className="items-center gap-2">
-				<View className={cn('rounded-full p-3', result.passed ? 'bg-blue-50' : 'bg-red-50')}>
-					{result.passed ? (
-						<Trophy size={32} color="#2563eb" />
-					) : (
-						<XCircle size={32} color="#dc2626" />
-					)}
+			<Reveal>
+				<View className="items-center gap-2">
+					{result.passed ? <Celebration /> : null}
+					<View
+						className={cn(
+							'rounded-full p-3',
+							result.passed ? 'bg-success/10' : 'bg-destructive/10',
+						)}
+					>
+						{result.passed ? (
+							<Trophy size={32} color={colors.success} />
+						) : (
+							<XCircle size={32} color={colors.destructive} />
+						)}
+					</View>
+					<Text className="text-center font-bold text-2xl text-foreground">
+						{result.passed ? 'Tebrikler!' : 'Tekrar Deneyin!'}
+					</Text>
+					<Text className="text-center text-muted-foreground">
+						{result.passed
+							? 'Quizi başarıyla tamamladınız!'
+							: `Geçmek için gerekli puana ulaşamadınız. Puanınız %${result.percentage.toFixed(1)}`}
+					</Text>
 				</View>
-				<Text className="text-center font-bold text-2xl text-slate-900">
-					{result.passed ? 'Tebrikler!' : 'Tekrar Deneyin!'}
-				</Text>
-				<Text className="text-center text-slate-500">
-					{result.passed
-						? 'Quizi başarıyla tamamladınız!'
-						: `Geçmek için gerekli puana ulaşamadınız. Puanınız %${result.percentage.toFixed(1)}`}
-				</Text>
-			</View>
+			</Reveal>
 
 			<View className="flex-row flex-wrap gap-3">
-				<StatTile value={`${result.percentage.toFixed(1)}%`} label="Final Puan" tone="blue" />
-				<StatTile value={String(result.correctAnswers)} label="Doğru" tone="blue" />
+				<StatTile
+					value={`${result.percentage.toFixed(1)}%`}
+					label="Final Puan"
+					tone="primary"
+					delay={70}
+				/>
+				<StatTile value={String(result.correctAnswers)} label="Doğru" tone="success" delay={120} />
 				<StatTile
 					value={String(result.totalQuestions - result.correctAnswers)}
 					label="Yanlış"
-					tone="red"
+					tone="destructive"
+					delay={170}
 				/>
-				<StatTile value={`${result.earnedPoints}/${result.totalPoints}`} label="Puan" tone="blue" />
+				<StatTile
+					value={`${result.earnedPoints}/${result.totalPoints}`}
+					label="Puan"
+					tone="primary"
+					delay={220}
+				/>
 			</View>
 
-			<View className="gap-3">
-				<Text className="font-bold text-lg text-slate-900">Soru İncelemesi</Text>
-				{result.attempts.map((attempt) => (
-					<AttemptRow key={attempt.questionId} attempt={attempt} questions={questions} />
-				))}
-			</View>
+			<Reveal delay={220}>
+				<View className="gap-3">
+					<Text className="font-bold text-foreground text-lg">Soru İncelemesi</Text>
+					{result.attempts.map((attempt, index) => (
+						<Reveal key={attempt.questionId} delay={Math.min(index * 45, 270)} distance={10}>
+							<AttemptRow attempt={attempt} questions={questions} />
+						</Reveal>
+					))}
+				</View>
+			</Reveal>
 
-			<View className="flex-row justify-center gap-3">
-				<Pressable
-					onPress={onRetake}
-					className="flex-row items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 active:bg-blue-700"
-				>
-					<RotateCcw size={16} color="#ffffff" />
-					<Text className="font-semibold text-sm text-white">Tekrar Dene</Text>
-				</Pressable>
-				<Pressable
-					onPress={onClose}
-					className="rounded-xl border border-slate-200 px-5 py-3 active:bg-slate-50"
-				>
-					<Text className="font-semibold text-slate-700 text-sm">Quizi Kapat</Text>
-				</Pressable>
-			</View>
+			<Reveal delay={300}>
+				<View className="flex-row justify-center gap-3">
+					<Pressable
+						onPress={onRetake}
+						accessibilityRole="button"
+						className="flex-row items-center gap-2 rounded-xl bg-primary px-5 py-3 active:bg-primary/90"
+					>
+						<RotateCcw size={16} color={colors.primaryForeground} />
+						<Text className="font-semibold text-primary-foreground text-sm">Tekrar Dene</Text>
+					</Pressable>
+					<Pressable
+						onPress={onClose}
+						accessibilityRole="button"
+						className="rounded-xl border border-input bg-card px-5 py-3 active:bg-muted"
+					>
+						<Text className="font-semibold text-foreground text-sm">Quizi Kapat</Text>
+					</Pressable>
+				</View>
+			</Reveal>
 		</ScrollView>
 	);
 }
 
-function StatTile({ value, label, tone }: { value: string; label: string; tone: 'blue' | 'red' }) {
+function StatTile({
+	value,
+	label,
+	tone,
+	delay,
+}: {
+	value: string;
+	label: string;
+	tone: 'primary' | 'success' | 'destructive';
+	delay: number;
+}) {
 	return (
-		<View
-			className={cn('items-center rounded-xl p-4', tone === 'blue' ? 'bg-blue-50' : 'bg-red-50')}
-			style={{ flexGrow: 1, flexBasis: '44%' }}
-		>
-			<Text
-				className={cn('font-bold text-2xl', tone === 'blue' ? 'text-blue-600' : 'text-red-600')}
-			>
-				{value}
-			</Text>
-			<Text className="text-slate-500 text-sm">{label}</Text>
+		<View style={{ flexGrow: 1, flexBasis: '44%' }}>
+			<Reveal delay={delay} distance={10}>
+				<View
+					className={cn(
+						'items-center rounded-xl p-4',
+						tone === 'success'
+							? 'bg-success/10'
+							: tone === 'destructive'
+								? 'bg-destructive/10'
+								: 'bg-accent',
+					)}
+				>
+					<Text
+						className={cn(
+							'font-bold text-2xl',
+							tone === 'success'
+								? 'text-success'
+								: tone === 'destructive'
+									? 'text-destructive'
+									: 'text-primary',
+						)}
+					>
+						{value}
+					</Text>
+					<Text className="text-muted-foreground text-sm">{label}</Text>
+				</View>
+			</Reveal>
 		</View>
 	);
 }
@@ -408,49 +523,51 @@ function AttemptRow({
 	attempt: QuizResult['attempts'][number];
 	questions: StrapiQuestion[];
 }) {
+	const colors = useThemeColors();
 	const index = questions.findIndex((q) => q.id === attempt.questionId);
 	const question = index >= 0 ? questions[index] : undefined;
 	return (
 		<View
 			className={cn(
-				'rounded-xl border border-slate-100 border-l-4 bg-white p-4',
-				attempt.isCorrect ? 'border-l-green-500' : 'border-l-red-500',
+				'rounded-xl border border-border border-l-4 bg-card p-4',
+				attempt.isCorrect ? 'border-l-success' : 'border-l-destructive',
 			)}
 		>
 			<View className="flex-row gap-3">
 				<View className="mt-0.5">
 					{attempt.isCorrect ? (
-						<CheckCircle size={20} color="#2563eb" />
+						<CheckCircle size={20} color={colors.success} />
 					) : (
-						<XCircle size={20} color="#dc2626" />
+						<XCircle size={20} color={colors.destructive} />
 					)}
 				</View>
 				<View className="flex-1 gap-1">
 					{question ? (
 						<View>
-							<Text className="font-medium text-slate-900">{index + 1}. soru</Text>
+							<Text className="font-medium text-foreground">{index + 1}. soru</Text>
 							<RichText blocks={question.text} />
 						</View>
 					) : null}
-					<Text className="text-slate-500 text-sm">
+					<Text className="text-muted-foreground text-sm">
 						Cevabınız:{' '}
 						<Text
-							className={
-								attempt.isCorrect ? 'font-semibold text-blue-600' : 'font-semibold text-red-600'
-							}
+							className={cn(
+								'font-semibold',
+								attempt.isCorrect ? 'text-success' : 'text-destructive',
+							)}
 						>
 							{attempt.selectedAnswer}
 						</Text>
 					</Text>
 					{!attempt.isCorrect ? (
-						<Text className="text-slate-500 text-sm">
+						<Text className="text-muted-foreground text-sm">
 							Doğru cevap:{' '}
-							<Text className="font-semibold text-blue-600">{attempt.correctAnswer}</Text>
+							<Text className="font-semibold text-primary">{attempt.correctAnswer}</Text>
 						</Text>
 					) : null}
 					{attempt.explanation?.length ? (
-						<View className="mt-2 rounded-lg bg-blue-50 p-3">
-							<Text className="font-bold text-blue-700 text-sm">Açıklama:</Text>
+						<View className="mt-2 rounded-lg bg-muted p-3">
+							<Text className="font-bold text-primary text-sm">Açıklama:</Text>
 							<RichText blocks={attempt.explanation} />
 						</View>
 					) : null}

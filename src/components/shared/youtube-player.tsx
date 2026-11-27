@@ -3,6 +3,7 @@ import * as React from 'react';
 import { useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Platform, Pressable, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useThemeColors } from '@/lib/theme';
 import { extractYouTubeVideoId } from '@/lib/utils';
 
 const PLAYER_ORIGIN = 'https://ketaakademi.app';
@@ -123,6 +124,7 @@ export function YouTubePlayer({
 	height?: number;
 	onEnded?: () => void;
 }) {
+	const colors = useThemeColors();
 	const videoId = useMemo(() => extractYouTubeVideoId(videoURL), [videoURL]);
 	const [playing, setPlaying] = useState(false);
 	const [failed, setFailed] = useState(false);
@@ -137,19 +139,16 @@ export function YouTubePlayer({
 
 	if (!videoId || failed) {
 		return (
-			<View
-				style={{ height }}
-				className="items-center justify-center gap-3 rounded-xl bg-slate-100"
-			>
-				<Text className="font-medium text-slate-500">Video yüklenemedi</Text>
+			<View style={{ height }} className="items-center justify-center gap-3 rounded-xl bg-muted">
+				<Text className="font-medium text-muted-foreground">Video yüklenemedi</Text>
 				<Pressable
 					onPress={() => {
 						setFailed(false);
 						setPlaying(false);
 					}}
-					className="rounded-full bg-blue-600 px-5 py-2 active:bg-blue-700"
+					className="rounded-full bg-primary px-5 py-2 active:bg-primary/90"
 				>
-					<Text className="font-semibold text-sm text-white">Tekrar dene</Text>
+					<Text className="font-semibold text-primary-foreground text-sm">Tekrar dene</Text>
 				</Pressable>
 			</View>
 		);
@@ -169,10 +168,11 @@ export function YouTubePlayer({
 					resizeMode="cover"
 					style={{ width: '100%', height, position: 'absolute', opacity: 0.55 }}
 				/>
-				<View className="size-16 items-center justify-center rounded-full bg-blue-600">
-					<Play size={30} color="#ffffff" />
+				<View className="absolute inset-0 bg-black/40" />
+				<View className="size-16 items-center justify-center rounded-full bg-primary">
+					<Play size={30} color={colors.primaryForeground} />
 				</View>
-				<Text className="mt-3 font-medium text-slate-200 text-sm">Videoyu oynat</Text>
+				<Text className="mt-3 font-medium text-sm text-white">Videoyu oynat</Text>
 			</Pressable>
 		);
 	}

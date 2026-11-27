@@ -19,8 +19,10 @@ import {
 	useWindowDimensions,
 	View,
 } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { DenemeCard } from '@/components/features/deneme/deneme-card';
 import { CourseCard } from '@/components/shared/course-card';
+import { AnimatedProgress, Reveal } from '@/components/shared/motion';
 import { SectionHeading } from '@/components/shared/states';
 import { type DenemeSummary, getDenemeler } from '@/lib/deneme';
 import { DEFAULT_SLIDES, getHomeSlides, type Slide } from '@/lib/home';
@@ -32,6 +34,7 @@ import {
 	type StrapiCourse,
 	type StrapiSubject,
 } from '@/lib/strapi';
+import { useThemeColors } from '@/lib/theme';
 import { useJWT } from '@/stores/auth-store';
 
 const SLIDER_INTERVAL = 6000;
@@ -45,6 +48,8 @@ const SAMPLE_TOPICS = [
 
 function HomeSlider({ slides }: { slides: Slide[] }) {
 	const router = useRouter();
+	const colors = useThemeColors();
+	const reduceMotion = useReducedMotion();
 	const { width } = useWindowDimensions();
 	const itemWidth = width - 40;
 	const listRef = useRef<FlatList<Slide>>(null);
@@ -52,19 +57,19 @@ function HomeSlider({ slides }: { slides: Slide[] }) {
 	const [autoplayPaused, setAutoplayPaused] = useState(false);
 
 	useEffect(() => {
-		if (slides.length < 2 || autoplayPaused) return;
+		if (slides.length < 2 || autoplayPaused || reduceMotion) return;
 		const timer = setInterval(() => {
 			setIndex((current) => {
 				const next = (current + 1) % slides.length;
 				listRef.current?.scrollToOffset({
 					offset: next * (itemWidth + SLIDER_GAP),
-					animated: true,
+					animated: !reduceMotion,
 				});
 				return next;
 			});
 		}, SLIDER_INTERVAL);
 		return () => clearInterval(timer);
-	}, [slides.length, itemWidth, autoplayPaused]);
+	}, [slides.length, itemWidth, autoplayPaused, reduceMotion]);
 
 	const onScroll = useCallback(
 		(event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -98,16 +103,19 @@ function HomeSlider({ slides }: { slides: Slide[] }) {
 				scrollEventThrottle={16}
 				contentContainerStyle={{ paddingHorizontal: 20, gap: SLIDER_GAP }}
 				renderItem={({ item }) => (
-					<View style={{ width: itemWidth }} className="overflow-hidden rounded-3xl bg-slate-900">
+					<View style={{ width: itemWidth }} className="overflow-hidden rounded-3xl bg-[#10231f]">
 						{item.gorselUrl ? (
-							<Image
-								source={{ uri: item.gorselUrl }}
-								accessibilityLabel={item.baslik}
-								resizeMode="cover"
-								style={{ width: '100%', height: 240 }}
-							/>
+							<View>
+								<Image
+									source={{ uri: item.gorselUrl }}
+									accessibilityLabel={item.baslik}
+									resizeMode="cover"
+									style={{ width: '100%', height: 240 }}
+								/>
+								<View className="absolute inset-x-0 bottom-0 h-24 bg-black/35" />
+							</View>
 						) : (
-							<View className="h-24 w-full bg-blue-600" />
+							<View className="h-24 w-full bg-primary" />
 						)}
 						<View className="gap-3 p-6">
 							<Text className="font-extrabold text-2xl text-white leading-tight">
@@ -119,10 +127,10 @@ function HomeSlider({ slides }: { slides: Slide[] }) {
 							{item.butonYazisi && item.link ? (
 								<Pressable
 									onPress={() => openSlide(item)}
-									className="mt-1 flex-row items-center self-start rounded-full bg-white px-5 py-2.5 active:bg-slate-100"
+									className="mt-1 flex-row items-center self-start rounded-full bg-white px-5 py-2.5 active:bg-white/90"
 								>
-									<Text className="font-bold text-slate-900 text-sm">{item.butonYazisi}</Text>
-									<ArrowRight size={16} color="#0f172a" style={{ marginLeft: 6 }} />
+									<Text className="font-bold text-[#10231f] text-sm">{item.butonYazisi}</Text>
+									<ArrowRight size={16} color="#10231f" style={{ marginLeft: 6 }} />
 								</Pressable>
 							) : null}
 						</View>
@@ -137,21 +145,21 @@ function HomeSlider({ slides }: { slides: Slide[] }) {
 							const next = (index - 1 + slides.length) % slides.length;
 							listRef.current?.scrollToOffset({
 								offset: next * (itemWidth + SLIDER_GAP),
-								animated: true,
+								animated: !reduceMotion,
 							});
 							setIndex(next);
 						}}
-						className="rounded-full bg-slate-100 p-1.5 active:bg-slate-200"
+						className="rounded-full bg-muted p-1.5 active:bg-secondary"
 					>
-						<ChevronLeft size={16} color="#475569" />
+						<ChevronLeft size={16} color={colors.mutedForeground} />
 					</Pressable>
 					{slides.map((slide, dotIndex) => (
 						<View
 							key={`dot-${slide.id}`}
 							className={
 								dotIndex === index
-									? 'h-2 w-6 rounded-full bg-blue-600'
-									: 'h-2 w-2 rounded-full bg-slate-300'
+									? 'h-2 w-6 rounded-full bg-primary'
+									: 'h-2 w-2 rounded-full bg-muted-foreground'
 							}
 						/>
 					))}
@@ -161,13 +169,13 @@ function HomeSlider({ slides }: { slides: Slide[] }) {
 							const next = (index + 1) % slides.length;
 							listRef.current?.scrollToOffset({
 								offset: next * (itemWidth + SLIDER_GAP),
-								animated: true,
+								animated: !reduceMotion,
 							});
 							setIndex(next);
 						}}
-						className="rounded-full bg-slate-100 p-1.5 active:bg-slate-200"
+						className="rounded-full bg-muted p-1.5 active:bg-secondary"
 					>
-						<ChevronRight size={16} color="#475569" />
+						<ChevronRight size={16} color={colors.mutedForeground} />
 					</Pressable>
 				</View>
 			) : null}
@@ -177,6 +185,7 @@ function HomeSlider({ slides }: { slides: Slide[] }) {
 
 export default function HomeScreen() {
 	const router = useRouter();
+	const colors = useThemeColors();
 	const jwt = useJWT();
 	const [slides, setSlides] = useState<Slide[]>(DEFAULT_SLIDES);
 	const [denemeler, setDenemeler] = useState<DenemeSummary[]>([]);
@@ -245,9 +254,11 @@ export default function HomeScreen() {
 	const exams = useMemo(() => denemeler.slice(0, 4), [denemeler]);
 
 	return (
-		<ScrollView className="flex-1 bg-slate-50" contentContainerStyle={{ paddingBottom: 40 }}>
+		<ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 40 }}>
 			<View className="pt-6 pb-10">
-				<HomeSlider slides={slides} />
+				<Reveal>
+					<HomeSlider slides={slides} />
+				</Reveal>
 
 				{exams.length ? (
 					<View className="mb-8 px-5">
@@ -306,9 +317,9 @@ export default function HomeScreen() {
 								<Pressable
 									key={subject.documentId}
 									onPress={() => router.push(`/konular/${subject.slug}`)}
-									className="rounded-full border border-slate-200 bg-white px-4 py-2 active:bg-slate-50"
+									className="rounded-full border border-input bg-card px-4 py-2 active:bg-muted"
 								>
-									<Text className="font-medium text-slate-700 text-sm">{subject.title}</Text>
+									<Text className="font-medium text-foreground text-sm">{subject.title}</Text>
 								</Pressable>
 							))}
 						</View>
@@ -316,91 +327,96 @@ export default function HomeScreen() {
 				) : null}
 
 				<View className="mb-8 px-5">
-					<View className="gap-4 rounded-3xl border border-slate-100 bg-white p-6">
+					<View className="gap-4 rounded-3xl border border-border bg-card p-6">
 						<View className="flex-row items-center gap-3">
-							<View className="size-11 items-center justify-center rounded-2xl bg-blue-50">
-								<GraduationCap size={22} color="#2563eb" />
+							<View className="size-11 items-center justify-center rounded-2xl bg-accent">
+								<GraduationCap size={22} color={colors.primary} />
 							</View>
-							<Text className="font-extrabold text-lg text-slate-900">Çağlar Hoca kimdir?</Text>
+							<Text className="font-extrabold text-foreground text-lg">Çağlar Hoca kimdir?</Text>
 						</View>
-						<Text className="text-slate-600 leading-relaxed">
+						<Text className="text-muted-foreground leading-relaxed">
 							ODTÜ Fizik mezunu Çağlar Hoca, ortaokul ve lise öğrencilerine LGS, TYT, AYT ve okul
 							sınavları için matematik dersi veriyor. Konuları ezberletmeden, "neden" ve "nasıl"
 							sorularıyla anlatıyor; her öğrenciyle seviyesine ve hedefine göre ilerliyor.
 						</Text>
 						<Pressable
 							onPress={() => router.push('/ozel-ders')}
-							className="self-start rounded-full border border-blue-600 px-5 py-2.5 active:bg-blue-50"
+							className="self-start rounded-full border border-primary px-5 py-2.5 active:bg-accent"
 						>
-							<Text className="font-bold text-blue-700 text-sm">Özel ders bilgisi</Text>
+							<Text className="font-bold text-primary text-sm">Özel ders bilgisi</Text>
 						</Pressable>
 					</View>
 				</View>
 
 				<View className="px-5">
-					<View className="gap-5 rounded-3xl bg-slate-900 p-6">
-						<Text className="font-extrabold text-white text-xl leading-tight">
-							Veliler için: çocuğunuz nerede eksik, görün
-						</Text>
-						<Text className="text-slate-300 leading-relaxed">
-							Ücretsiz denemeyi çözen öğrencinin PDF analiz raporu hemen hazırlanır: yanlış yaptığı
-							her soru çözümüyle, konu konu başarısı, izlemesi gereken dersler ve Çağlar Hoca'nın
-							notu. İsterseniz raporu 15 dakikada birlikte değerlendiririz.
-						</Text>
-
-						<View className="gap-3 rounded-2xl bg-slate-800 p-4">
-							<Text className="font-semibold text-slate-200 text-xs uppercase tracking-wider">
-								Örnek rapor · konu bazında başarı
+					<Reveal delay={120}>
+						<View className="gap-5 rounded-3xl bg-slate-900 p-6">
+							<Text className="font-extrabold text-white text-xl leading-tight">
+								Veliler için: çocuğunuz nerede eksik, görün
 							</Text>
-							{SAMPLE_TOPICS.map((topic) => (
-								<View key={topic.label} className="gap-1">
-									<View className="flex-row justify-between">
-										<Text className="text-slate-300 text-xs">{topic.label}</Text>
-										<Text className="font-bold text-slate-100 text-xs">%{topic.value}</Text>
-									</View>
-									<View className="h-1.5 overflow-hidden rounded-full bg-slate-700">
-										<View
-											className="h-full rounded-full bg-blue-500"
-											style={{ width: `${topic.value}%` }}
+							<Text className="text-slate-300 leading-relaxed">
+								Ücretsiz denemeyi çözen öğrencinin PDF analiz raporu hemen hazırlanır: yanlış
+								yaptığı her soru çözümüyle, konu konu başarısı, izlemesi gereken dersler ve Çağlar
+								Hoca'nın notu. İsterseniz raporu 15 dakikada birlikte değerlendiririz.
+							</Text>
+
+							<View className="gap-3 rounded-2xl bg-slate-800 p-4">
+								<Text className="font-semibold text-slate-200 text-xs uppercase tracking-wider">
+									Örnek rapor · konu bazında başarı
+								</Text>
+								{SAMPLE_TOPICS.map((topic) => (
+									<View key={topic.label} className="gap-1">
+										<View className="flex-row justify-between">
+											<Text className="text-slate-300 text-xs">{topic.label}</Text>
+											<Text className="font-bold text-slate-100 text-xs">%{topic.value}</Text>
+										</View>
+										<AnimatedProgress
+											progress={topic.value}
+											className="h-1.5"
+											trackClassName="bg-white/15"
+											color="#8bc9b6"
+											accessibilityLabel="Konu ilerlemesi"
 										/>
 									</View>
-								</View>
-							))}
-						</View>
+								))}
+							</View>
 
-						<View className="border-slate-700 border-l-2 pl-3">
-							<Text className="text-slate-300 text-sm italic leading-relaxed">
-								Öncelikle kareköklü ifadelere çalışalım: şu dersi izle → Kareköklü İfadelerde
-								Sadeleştirme
-							</Text>
-						</View>
-
-						<View className="gap-3">
-							<Pressable
-								onPress={() => router.push('/deneme-sinavlari')}
-								className="flex-row items-center justify-center rounded-full bg-blue-600 py-3 active:bg-blue-700"
-							>
-								<Text className="font-bold text-sm text-white">Ücretsiz deneme çöz</Text>
-							</Pressable>
-							<Pressable
-								onPress={() => router.push('/ozel-ders')}
-								className="flex-row items-center justify-center rounded-full border border-slate-600 py-3 active:bg-slate-800"
-							>
-								<Text className="font-bold text-slate-100 text-sm">Deneme dersi için yazın</Text>
-							</Pressable>
-							<Pressable
-								onPress={() =>
-									void Linking.openURL('https://ketalearn.cloud/ornek-deneme-raporu.pdf')
-								}
-								className="flex-row items-center justify-center gap-2 py-1 active:opacity-70"
-							>
-								<FileText size={15} color="#93c5fd" />
-								<Text className="font-semibold text-blue-300 text-sm">
-									Örnek PDF raporu inceleyin
+							<View className="border-slate-700 border-l-2 pl-3">
+								<Text className="text-slate-300 text-sm italic leading-relaxed">
+									Öncelikle kareköklü ifadelere çalışalım: şu dersi izle → Kareköklü İfadelerde
+									Sadeleştirme
 								</Text>
-							</Pressable>
+							</View>
+
+							<View className="gap-3">
+								<Pressable
+									onPress={() => router.push('/deneme-sinavlari')}
+									className="flex-row items-center justify-center rounded-full bg-primary py-3 active:bg-primary/90"
+								>
+									<Text className="font-bold text-primary-foreground text-sm">
+										Ücretsiz deneme çöz
+									</Text>
+								</Pressable>
+								<Pressable
+									onPress={() => router.push('/ozel-ders')}
+									className="flex-row items-center justify-center rounded-full border border-slate-500 py-3 active:bg-slate-800"
+								>
+									<Text className="font-bold text-slate-100 text-sm">Deneme dersi için yazın</Text>
+								</Pressable>
+								<Pressable
+									onPress={() =>
+										void Linking.openURL('https://ketalearn.cloud/ornek-deneme-raporu.pdf')
+									}
+									className="flex-row items-center justify-center gap-2 py-1 active:opacity-70"
+								>
+									<FileText size={15} color="#93c5fd" />
+									<Text className="font-semibold text-blue-300 text-sm">
+										Örnek PDF raporu inceleyin
+									</Text>
+								</Pressable>
+							</View>
 						</View>
-					</View>
+					</Reveal>
 				</View>
 			</View>
 		</ScrollView>

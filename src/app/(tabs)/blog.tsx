@@ -5,10 +5,12 @@ import { FlatList, Text, TextInput, View } from 'react-native';
 import { BlogCard } from '@/components/shared/cards/blog-card';
 import { EmptyState, LoadingState } from '@/components/shared/states';
 import { getBlogs, type StrapiBlog } from '@/lib/strapi';
+import { useThemeColors } from '@/lib/theme';
 import { normalizeTurkish } from '@/lib/utils';
 
 export default function BlogScreen() {
 	const router = useRouter();
+	const colors = useThemeColors();
 	const [blogs, setBlogs] = useState<StrapiBlog[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [failed, setFailed] = useState(false);
@@ -40,20 +42,21 @@ export default function BlogScreen() {
 
 	return (
 		<FlatList
-			className="flex-1 bg-slate-50"
+			className="flex-1 bg-background"
 			data={filtered}
 			keyExtractor={(blog) => blog.documentId}
 			contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 40 }}
 			ListHeaderComponent={
 				<View className="mb-2 gap-3">
-					<Text className="font-extrabold text-2xl text-slate-900">Blog</Text>
-					<View className="flex-row items-center rounded-xl border border-slate-200 bg-white px-3">
+					<Text className="font-extrabold text-2xl text-foreground">Blog</Text>
+					<View className="flex-row items-center rounded-xl border border-input bg-card px-3">
 						<TextInput
+							accessibilityLabel="Blog yazılarında ara"
 							value={query}
 							onChangeText={setQuery}
 							placeholder="Ara..."
-							placeholderTextColor="#94a3b8"
-							className="h-11 flex-1 text-slate-900 text-sm"
+							placeholderTextColor={colors.mutedForeground}
+							className="h-11 flex-1 text-foreground text-sm"
 						/>
 					</View>
 				</View>

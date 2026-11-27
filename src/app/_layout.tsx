@@ -5,12 +5,15 @@ import { PortalHost } from '@rn-primitives/portal';
 import * as Linking from 'expo-linking';
 import { SplashScreen, Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
-import { useUniwind } from 'uniwind';
+import { useCallback, useEffect, useState } from 'react';
+import { View } from 'react-native';
+import { Uniwind, useUniwind } from 'uniwind';
+import { AnimatedSplash } from '@/components/shared/animated-splash';
 import { completeGoogleSignIn } from '@/lib/auth';
 import { appHref } from '@/lib/routes';
-import { NAV_THEME } from '@/lib/theme';
+import { NAV_THEME, useThemeColors } from '@/lib/theme';
 import { useAuthHydrated, useAuthStore } from '@/stores/auth-store';
+import { useThemeStore } from '@/stores/theme-store';
 
 export {
 	// Catch any errors thrown by the Layout component.
@@ -22,27 +25,24 @@ export const unstable_settings = {
 	initialRouteName: '(tabs)',
 };
 
-// Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
-
-const HEADER_STYLE = {
-	backgroundColor: '#ffffff',
-	borderBottomWidth: 1,
-	borderBottomColor: '#f1f5f9',
-	elevation: 0,
-	shadowOpacity: 0,
-} as const;
-
-const HEADER_TITLE_STYLE = {
-	fontWeight: 'bold' as const,
-	color: '#0f172a',
-};
+void SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
 	const { setAuth, setHydrated, refreshUser } = useAuthStore();
 	const hasHydrated = useAuthHydrated();
 	const router = useRouter();
 	const { theme } = useUniwind();
+	const colors = useThemeColors();
+	const preference = useThemeStore((state) => state.preference);
+	const themeHydrated = useThemeStore((state) => state.hasHydrated);
+	const setThemeHydrated = useThemeStore((state) => state.setHydrated);
+	const [showSplash, setShowSplash] = useState(true);
+	const finishSplash = useCallback(() => setShowSplash(false), []);
+	const ready = hasHydrated && themeHydrated;
+
+	useEffect(() => {
+		Uniwind.setTheme(preference);
+	}, [preference]);
 
 	useEffect(() => {
 		let active = true;
@@ -61,6 +61,14 @@ export default function RootLayout() {
 		};
 
 		const initialize = async () => {
+			try {
+				await useThemeStore.persist.rehydrate();
+			} catch (error) {
+				console.error('Failed to restore theme preference:', error);
+			} finally {
+				if (active) setThemeHydrated(true);
+			}
+
 			try {
 				await useAuthStore.persist.rehydrate();
 			} catch (error) {
@@ -81,7 +89,6 @@ export default function RootLayout() {
 			}
 			if (!active) return;
 			void refreshUser();
-			void SplashScreen.hideAsync();
 		};
 
 		void initialize();
@@ -89,25 +96,44 @@ export default function RootLayout() {
 			active = false;
 			subscription?.remove();
 		};
-	}, [refreshUser, router, setAuth, setHydrated]);
+	}, [refreshUser, router, setAuth, setHydrated, setThemeHydrated]);
 
-	if (!hasHydrated) return null;
+	useEffect(() => {
+		if (!ready) return;
+		void SplashScreen.hideAsync().catch(() => {});
+	}, [ready]);
 
 	return (
 		<ThemeProvider value={NAV_THEME[theme ?? 'light']}>
-			<StatusBar style={theme === 'dark' ? 'light' : 'dark'} />
-			<Stack
-				screenOptions={{
-					headerStyle: HEADER_STYLE,
-					headerTitleStyle: HEADER_TITLE_STYLE,
-					headerTintColor: '#2563eb',
-					contentStyle: { backgroundColor: '#f8fafc' },
-				}}
-			>
-				<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-				<Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-			</Stack>
+			<StatusBar style={showSplash || theme === 'dark' ? 'light' : 'dark'} />
+			{ready ? (
+				<View
+					style={{ flex: 1 }}
+					accessibilityElementsHidden={showSplash}
+					importantForAccessibility={showSplash ? 'no-hide-descendants' : 'auto'}
+					aria-hidden={showSplash}
+				>
+					<Stack
+						screenOptions={{
+							headerStyle: {
+								backgroundColor: colors.card,
+							},
+							headerShadowVisible: false,
+							headerTitleStyle: {
+								fontWeight: 'bold',
+								color: colors.foreground,
+							},
+							headerTintColor: colors.primary,
+							contentStyle: { backgroundColor: colors.background },
+						}}
+					>
+						<Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+						<Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+					</Stack>
+				</View>
+			) : null}
 			<PortalHost />
+			{showSplash ? <AnimatedSplash ready={ready} onFinish={finishSplash} /> : null}
 		</ThemeProvider>
 	);
 }

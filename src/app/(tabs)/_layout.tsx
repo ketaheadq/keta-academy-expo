@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { BookText, Home, PlayCircle, User } from 'lucide-react-native';
+import { useThemeColors } from '@/lib/theme';
 
 function HomeIcon({ color, size }: Readonly<{ color: string; size: number }>) {
 	return <Home size={size} color={color} />;
@@ -18,29 +19,35 @@ function ProfileIcon({ color, size }: Readonly<{ color: string; size: number }>)
 }
 
 export default function TabLayout() {
+	const colors = useThemeColors();
 	return (
 		<Tabs
 			screenOptions={{
-				tabBarActiveTintColor: '#2563eb',
-				tabBarInactiveTintColor: '#64748b',
+				tabBarActiveTintColor: colors.primary,
+				tabBarInactiveTintColor: colors.mutedForeground,
 				headerShown: true,
 				headerStyle: {
-					backgroundColor: '#ffffff',
+					backgroundColor: colors.card,
 					borderBottomWidth: 1,
-					borderBottomColor: '#f1f5f9',
+					borderBottomColor: colors.border,
 					elevation: 0,
 					shadowOpacity: 0,
 				},
 				headerTitleStyle: {
 					fontWeight: 'bold',
-					color: '#0f172a',
+					color: colors.foreground,
 				},
 				tabBarStyle: {
+					backgroundColor: colors.card,
 					borderTopWidth: 1,
-					borderTopColor: '#f1f5f9',
-					height: 60,
+					borderTopColor: colors.border,
+					height: 64,
 					paddingBottom: 8,
 					paddingTop: 8,
+				},
+				tabBarLabelStyle: {
+					fontSize: 11,
+					fontWeight: '600',
 				},
 			}}
 		>
