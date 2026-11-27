@@ -13,7 +13,7 @@ import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { ReportRequestForm } from '@/components/features/deneme/report-request-form';
 import { SampleReport } from '@/components/features/deneme/sample-report';
 import { RichText } from '@/components/shared/rich-text';
-import { EmptyState, LoadingState } from '@/components/shared/states';
+import { EmptyState, ErrorState, LoadingState } from '@/components/shared/states';
 import { useAsync } from '@/hooks/use-async';
 import {
 	ANALIZ_MADDELERI,
@@ -26,20 +26,65 @@ import {
 	type SonucOzeti,
 	submitDeneme,
 } from '@/lib/deneme';
+import { secureStorage } from '@/lib/storage';
 import { cn, formatClock, formatNumberTR, generateUuid } from '@/lib/utils';
 
 type Stage = 'intro' | 'running' | 'result';
 
+type ExamDraft = {
+	oturumId: string;
+	startedAt: number;
+	current: number;
+	answers: Record<number, string | null>;
+};
+
+const examDraftKey = (slug: string) => `deneme-draft:${encodeURIComponent(slug)}`;
+
+function parseExamDraft(value: string | null, questionCount: number): ExamDraft | null {
+	if (!value || !questionCount) return null;
+	try {
+		const draft = JSON.parse(value) as Partial<ExamDraft>;
+		if (
+			typeof draft.oturumId !== 'string' ||
+			!draft.oturumId ||
+			typeof draft.startedAt !== 'number' ||
+			!Number.isFinite(draft.startedAt) ||
+			typeof draft.current !== 'number' ||
+			!Number.isInteger(draft.current) ||
+			draft.current < 0 ||
+			draft.current >= questionCount ||
+			!draft.answers ||
+			typeof draft.answers !== 'object' ||
+			Array.isArray(draft.answers) ||
+			!Object.values(draft.answers).every((answer) => answer === null || typeof answer === 'string')
+		) {
+			return null;
+		}
+		return draft as ExamDraft;
+	} catch {
+		return null;
+	}
+}
+
 export default function DenemeScreen() {
 	const { slug } = useLocalSearchParams<{ slug: string }>();
 	const router = useRouter();
-	const { data, loading } = useAsync(() => getDeneme(slug), [slug]);
+	const { data, loading, error, reload } = useAsync(() => getDeneme(slug), [slug]);
 
 	if (loading) {
 		return (
 			<>
 				<Stack.Screen options={{ title: 'Deneme Sınavları' }} />
 				<LoadingState />
+			</>
+		);
+	}
+
+	if (error) {
+		return (
+			<>
+				<Stack.Screen options={{ title: 'Deneme yüklenemedi' }} />
+				<ErrorState message={error} onRetry={reload} />
 			</>
 		);
 	}
@@ -63,8 +108,7 @@ export default function DenemeScreen() {
 }
 
 function DenemeRunner({ deneme }: { deneme: DenemeDetail }) {
-	// Anonymous exam identity; the web app keeps this in sessionStorage, mobile per mount.
-	const [oturumId] = useState(generateUuid);
+	const [oturumId, setOturumId] = useState(generateUuid);
 	const [stage, setStage] = useState<Stage>('intro');
 	const [startedAt, setStartedAt] = useState<number | null>(null);
 	const [current, setCurrent] = useState(0);
@@ -73,6 +117,7 @@ function DenemeRunner({ deneme }: { deneme: DenemeDetail }) {
 	const [result, setResult] = useState<SonucOzeti | null>(null);
 	const [submitting, setSubmitting] = useState(false);
 	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [draftReady, setDraftReady] = useState(false);
 	const submittedRef = useRef(false);
 
 	const total = deneme.sorular.length;
@@ -81,6 +126,46 @@ function DenemeRunner({ deneme }: { deneme: DenemeDetail }) {
 		startedAt !== null
 			? Math.max(0, limitSeconds - Math.floor((now - startedAt) / 1000))
 			: limitSeconds;
+
+	useEffect(() => {
+		let active = true;
+		const key = examDraftKey(deneme.slug);
+		setDraftReady(false);
+		void (async () => {
+			try {
+				const stored = await secureStorage.getItem(key);
+				const draft = parseExamDraft(stored, total);
+				if (!active) return;
+				if (draft) {
+					setOturumId(draft.oturumId);
+					setStartedAt(draft.startedAt);
+					setCurrent(draft.current);
+					setAnswers(draft.answers);
+					setNow(Date.now());
+					setStage('running');
+				} else if (stored) {
+					await secureStorage.removeItem(key);
+				}
+			} catch (error) {
+				console.error('Failed to restore exam draft:', error);
+			} finally {
+				if (active) setDraftReady(true);
+			}
+		})();
+		return () => {
+			active = false;
+		};
+	}, [deneme.slug, total]);
+
+	useEffect(() => {
+		if (!draftReady || stage !== 'running' || startedAt === null || result) return;
+		void Promise.resolve(
+			secureStorage.setItem(
+				examDraftKey(deneme.slug),
+				JSON.stringify({ oturumId, startedAt, current, answers } satisfies ExamDraft),
+			),
+		).catch((error) => console.error('Failed to save exam draft:', error));
+	}, [answers, current, deneme.slug, draftReady, oturumId, result, stage, startedAt]);
 
 	const finish = useCallback(async () => {
 		if (startedAt === null || submittedRef.current) return;
@@ -95,6 +180,11 @@ function DenemeRunner({ deneme }: { deneme: DenemeDetail }) {
 				kaynak: 'mobil-uygulama',
 				utm: null,
 			});
+			try {
+				await secureStorage.removeItem(examDraftKey(deneme.slug));
+			} catch (error) {
+				console.error('Failed to clear exam draft:', error);
+			}
 			setResult(response);
 			setStage('result');
 		} catch (error) {
@@ -118,6 +208,8 @@ function DenemeRunner({ deneme }: { deneme: DenemeDetail }) {
 	}, [stage, startedAt, remaining, finish]);
 
 	const start = () => {
+		submittedRef.current = false;
+		setOturumId(generateUuid());
 		setAnswers({});
 		setCurrent(0);
 		setSubmitError(null);
@@ -125,6 +217,15 @@ function DenemeRunner({ deneme }: { deneme: DenemeDetail }) {
 		setNow(Date.now());
 		setStage('running');
 	};
+
+	if (!draftReady) {
+		return (
+			<>
+				<Stack.Screen options={{ title: deneme.baslik }} />
+				<LoadingState label="Sınav hazırlanıyor..." />
+			</>
+		);
+	}
 
 	const eyebrow = [SINAV_TURU_LABEL[deneme.sinavTuru], deneme.sinif?.title, deneme.ders?.title]
 		.filter(Boolean)
@@ -195,13 +296,16 @@ function DenemeRunner({ deneme }: { deneme: DenemeDetail }) {
 					remaining={remaining}
 					submitting={submitting}
 					submitError={submitError}
-					onChoose={(letter) =>
+					onChoose={(letter) => {
+						if (submitting) return;
 						setAnswers((prev) => ({
 							...prev,
 							[current]: prev[current] === letter ? null : letter,
-						}))
-					}
-					onGo={(index) => setCurrent(Math.min(total - 1, Math.max(0, index)))}
+						}));
+					}}
+					onGo={(index) => {
+						if (!submitting) setCurrent(Math.min(total - 1, Math.max(0, index)));
+					}}
 					onFinish={() => void finish()}
 				/>
 			) : result ? (
@@ -246,6 +350,7 @@ function RunningStage({
 			className="flex-1 bg-slate-50"
 			contentContainerStyle={{ paddingBottom: 16 }}
 			stickyHeaderIndices={[1]}
+			pointerEvents={submitting ? 'none' : 'auto'}
 		>
 			{heading}
 			<View className="flex-row items-center justify-between gap-3 border-slate-200 border-b bg-white px-4 py-3">

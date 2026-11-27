@@ -429,6 +429,16 @@ export const EMPTY_RATING: TutorRatingSummary = { count: 0, average: 0, satisfac
 
 export const STRAPI_URL = process.env.EXPO_PUBLIC_STRAPI_URL || 'https://admin.ketalearn.cloud';
 
+let authExpiredHandler: (() => void) | null = null;
+
+export function setAuthExpiredHandler(handler: (() => void) | null) {
+	authExpiredHandler = handler;
+}
+
+function handleAuthExpired() {
+	authExpiredHandler?.();
+}
+
 /** Resolves Strapi media URLs, which come back relative (`/uploads/...`). */
 export function mediaUrl(url?: string | null): string | null {
 	if (!url) return null;
@@ -483,15 +493,10 @@ export async function getPageCategories(): Promise<StrapiPageCategory[]> {
 }
 
 export async function getPageBySlug(slug: string): Promise<StrapiPage | null> {
-	try {
-		const response = await fetchStrapiData<StrapiResponse<StrapiPage[]>>(
-			`pages?filters[slug][$eq]=${slug}&populate=*`,
-		);
-		return response.data.length > 0 ? response.data[0] : null;
-	} catch (error) {
-		console.error('Error fetching page by slug:', error);
-		return null;
-	}
+	const response = await fetchStrapiData<StrapiResponse<StrapiPage[]>>(
+		`pages?filters[slug][$eq]=${encodeURIComponent(slug)}&populate=*`,
+	);
+	return response.data.length > 0 ? response.data[0] : null;
 }
 
 // `populate=*` only goes one level deep, so the SEO image would be missing.
@@ -592,10 +597,15 @@ export async function getPublishedCourses(limit?: number): Promise<StrapiCourse[
 }
 
 export async function getCoursesBySubject(subjectSlug: string): Promise<StrapiCourse[]> {
-	const response = await fetchStrapiData<StrapiResponse<StrapiCourse[]>>(
-		`courses?filters[subject][slug][$eq]=${subjectSlug}&populate=*`,
-	);
-	return response.data;
+	const courses: StrapiCourse[] = [];
+	for (let page = 1; ; page++) {
+		const response = await fetchStrapiData<StrapiCollectionResponse<StrapiCourse>>(
+			`courses?filters[subject][slug][$eq]=${encodeURIComponent(subjectSlug)}&populate=*&sort=title:asc&pagination[page]=${page}&pagination[pageSize]=100`,
+		);
+		courses.push(...response.data);
+		if (page >= (response.meta?.pagination?.pageCount ?? 1)) break;
+	}
+	return courses;
 }
 
 export async function getSubjectBySlug(slug: string): Promise<StrapiSubject | undefined> {
@@ -619,6 +629,7 @@ async function learningRequest<T>(path: string, token: string, options?: Request
 		...options,
 		headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
 	});
+	if (response.status === 401 || response.status === 403) handleAuthExpired();
 	if (!response.ok) throw new Error(`Learning request failed: ${response.status}`);
 	return (await response.json()).data;
 }
@@ -669,55 +680,35 @@ export function submitQuiz(
 }
 
 export async function getAdmissionScores(): Promise<StrapiAdmissionScore[]> {
-	try {
-		const response = await fetchStrapiData<StrapiResponse<StrapiAdmissionScore[]>>(
-			'admission-scores?populate=*',
-		);
-		return response.data;
-	} catch (error) {
-		console.error('Error fetching admission scores:', error);
-		return [];
-	}
+	const response = await fetchStrapiData<StrapiResponse<StrapiAdmissionScore[]>>(
+		'admission-scores?populate=*',
+	);
+	return response.data;
 }
 
 export async function getAdmissionScoreBySlug(slug: string): Promise<StrapiAdmissionScore | null> {
-	try {
-		const response = await fetchStrapiData<StrapiResponse<StrapiAdmissionScore[]>>(
-			`admission-scores?filters[slug][$eq]=${slug}&populate[university][populate]=*&populate[department][populate]=*&populate[page][populate]=*&populate[related_datas][populate]=*&populate[SEO][populate]=*&fields[0]=id&fields[1]=documentId&fields[2]=title&fields[3]=slug&fields[4]=content&fields[5]=isPopular&fields[6]=createdAt&fields[7]=updatedAt&fields[8]=publishedAt`,
-		);
-		return response.data.length > 0 ? response.data[0] : null;
-	} catch (error) {
-		console.error('Error fetching admission score by slug:', error);
-		return null;
-	}
+	const response = await fetchStrapiData<StrapiResponse<StrapiAdmissionScore[]>>(
+		`admission-scores?filters[slug][$eq]=${encodeURIComponent(slug)}&populate[university][populate]=*&populate[department][populate]=*&populate[page][populate]=*&populate[related_datas][populate]=*&populate[SEO][populate]=*&fields[0]=id&fields[1]=documentId&fields[2]=title&fields[3]=slug&fields[4]=content&fields[5]=isPopular&fields[6]=createdAt&fields[7]=updatedAt&fields[8]=publishedAt`,
+	);
+	return response.data.length > 0 ? response.data[0] : null;
 }
 
 export async function getAdmissionScoresByPage(pageSlug: string): Promise<StrapiAdmissionScore[]> {
-	try {
-		const response = await fetchStrapiData<StrapiResponse<StrapiAdmissionScore[]>>(
-			`admission-scores?filters[page][slug][$eq]=${pageSlug}&populate[university][populate]=*&populate[department][populate]=*&fields[0]=id&fields[1]=documentId&fields[2]=title&fields[3]=slug&fields[5]=isPopular&fields[6]=createdAt&fields[7]=updatedAt&fields[8]=publishedAt&pagination[pageSize]=100`,
-		);
-		return response.data;
-	} catch (error) {
-		console.error('Error fetching admission scores by page:', error);
-		return [];
-	}
+	const response = await fetchStrapiData<StrapiResponse<StrapiAdmissionScore[]>>(
+		`admission-scores?filters[page][slug][$eq]=${encodeURIComponent(pageSlug)}&populate[university][populate]=*&populate[department][populate]=*&fields[0]=id&fields[1]=documentId&fields[2]=title&fields[3]=slug&fields[5]=isPopular&fields[6]=createdAt&fields[7]=updatedAt&fields[8]=publishedAt&pagination[pageSize]=100`,
+	);
+	return response.data;
 }
 
 export async function getAdmissionScoreTableDataBySlug(slug: string): Promise<string | null> {
-	try {
-		const response = await fetch(
-			`${STRAPI_URL}/api/admission-scores?filters[slug][$eq]=${slug}&fields[0]=tableData`,
-			{ headers: { 'Content-Type': 'application/json' } },
-		);
-		if (response.status === 403) return null;
-		if (!response.ok) throw new Error(`Failed to fetch table data: ${response.statusText}`);
-		const data = await response.json();
-		return data.data && data.data.length > 0 ? data.data[0].tableData : null;
-	} catch (error) {
-		console.error('Error fetching admission score table data by slug:', error);
-		return null;
-	}
+	const response = await fetch(
+		`${STRAPI_URL}/api/admission-scores?filters[slug][$eq]=${encodeURIComponent(slug)}&fields[0]=tableData`,
+		{ headers: { 'Content-Type': 'application/json' } },
+	);
+	if (response.status === 403) return null;
+	if (!response.ok) throw new Error(`Failed to fetch table data: ${response.statusText}`);
+	const data = await response.json();
+	return data.data && data.data.length > 0 ? data.data[0].tableData : null;
 }
 
 export async function getUniversities(): Promise<StrapiUniversity[]> {
@@ -767,86 +758,51 @@ export async function getDepartmentBySlug(slug: string): Promise<StrapiDepartmen
 }
 
 export async function getVideos(): Promise<StrapiVideo[]> {
-	try {
-		const response = await fetchStrapiData<StrapiResponse<StrapiVideo[]>>('videos?populate=*');
-		return response.data;
-	} catch (error) {
-		console.error('Error fetching videos:', error);
-		return [];
-	}
+	const response = await fetchStrapiData<StrapiResponse<StrapiVideo[]>>('videos?populate=*');
+	return response.data;
 }
 
 export async function getVideoBySlug(slug: string): Promise<StrapiVideo | null> {
-	try {
-		const response = await fetchStrapiData<StrapiResponse<StrapiVideo[]>>(
-			`videos?filters[slug][$eq]=${slug}&populate=*`,
-		);
-		return response.data.length > 0 ? response.data[0] : null;
-	} catch (error) {
-		console.error('Error fetching video by slug:', error);
-		return null;
-	}
+	const response = await fetchStrapiData<StrapiResponse<StrapiVideo[]>>(
+		`videos?filters[slug][$eq]=${encodeURIComponent(slug)}&populate=*`,
+	);
+	return response.data.length > 0 ? response.data[0] : null;
 }
 
 export async function getVideosByPage(pageSlug: string): Promise<StrapiVideo[]> {
-	try {
-		const response = await fetchStrapiData<StrapiResponse<StrapiVideo[]>>(
-			`videos?filters[page][slug][$eq]=${pageSlug}&populate=*&pagination[pageSize]=100`,
-		);
-		return response.data;
-	} catch (error) {
-		console.error('Error fetching videos by page:', error);
-		return [];
-	}
+	const response = await fetchStrapiData<StrapiResponse<StrapiVideo[]>>(
+		`videos?filters[page][slug][$eq]=${encodeURIComponent(pageSlug)}&populate=*&pagination[pageSize]=100`,
+	);
+	return response.data;
 }
 
 export async function getBlogs(): Promise<StrapiBlog[]> {
-	try {
-		const response = await fetchStrapiData<StrapiResponse<StrapiBlog[]>>('blogs?populate=*');
-		return response.data;
-	} catch (error) {
-		console.error('Error fetching blogs:', error);
-		return [];
-	}
+	const response = await fetchStrapiData<StrapiResponse<StrapiBlog[]>>('blogs?populate=*');
+	return response.data;
 }
 
 export async function getBlogBySlug(slug: string): Promise<StrapiBlog | null> {
-	try {
-		const response = await fetchStrapiData<StrapiResponse<StrapiBlog[]>>(
-			`blogs?filters[slug][$eq]=${slug}&populate=*`,
-		);
-		return response.data.length > 0 ? response.data[0] : null;
-	} catch (error) {
-		console.error('Error fetching blog by slug:', error);
-		return null;
-	}
+	const response = await fetchStrapiData<StrapiResponse<StrapiBlog[]>>(
+		`blogs?filters[slug][$eq]=${encodeURIComponent(slug)}&populate=*`,
+	);
+	return response.data.length > 0 ? response.data[0] : null;
 }
 
 export async function getBlogsByPage(pageSlug: string): Promise<StrapiBlog[]> {
-	try {
-		const response = await fetchStrapiData<StrapiResponse<StrapiBlog[]>>(
-			`blogs?filters[page][slug][$eq]=${pageSlug}&populate=*&pagination[pageSize]=100`,
-		);
-		return response.data;
-	} catch (error) {
-		console.error('Error fetching blogs by page:', error);
-		return [];
-	}
+	const response = await fetchStrapiData<StrapiResponse<StrapiBlog[]>>(
+		`blogs?filters[page][slug][$eq]=${encodeURIComponent(pageSlug)}&populate=*&pagination[pageSize]=100`,
+	);
+	return response.data;
 }
 
 const TUTOR_POPULATE =
 	'populate[subjects]=true&populate[profilePicture]=true&populate[SEO][populate]=metaImage';
 
 export async function getTutoringProfiles(): Promise<StrapiTutoringProfile[]> {
-	try {
-		const response = await fetchStrapiData<StrapiResponse<StrapiTutoringProfile[]>>(
-			`tutoring-profiles?${TUTOR_POPULATE}&pagination[pageSize]=100`,
-		);
-		return response.data;
-	} catch (error) {
-		console.error('Error fetching tutoring profiles:', error);
-		return [];
-	}
+	const response = await fetchStrapiData<StrapiResponse<StrapiTutoringProfile[]>>(
+		`tutoring-profiles?${TUTOR_POPULATE}&pagination[pageSize]=100`,
+	);
+	return response.data;
 }
 
 /** URL segment for a tutor's page: the slug, or the documentId when no slug is set. */
@@ -868,17 +824,12 @@ export async function getTutoringProfile(slugOrId: string): Promise<StrapiTutori
 
 /** Rating summary of every tutor, keyed by tutor documentId. */
 export async function getTutorRatingSummaries(): Promise<Record<string, TutorRatingSummary>> {
-	try {
-		const response = await fetchStrapiData<{
-			data: (TutorRatingSummary & { tutorDocumentId: string })[];
-		}>('tutor-reviews/summary');
-		return Object.fromEntries(
-			(response.data ?? []).map(({ tutorDocumentId, ...summary }) => [tutorDocumentId, summary]),
-		);
-	} catch (error) {
-		console.error('Error fetching tutor rating summaries:', error);
-		return {};
-	}
+	const response = await fetchStrapiData<{
+		data: (TutorRatingSummary & { tutorDocumentId: string })[];
+	}>('tutor-reviews/summary');
+	return Object.fromEntries(
+		(response.data ?? []).map(({ tutorDocumentId, ...summary }) => [tutorDocumentId, summary]),
+	);
 }
 
 async function reviewRequest<T>(
@@ -893,6 +844,7 @@ async function reviewRequest<T>(
 			...(token ? { Authorization: `Bearer ${token}` } : {}),
 		},
 	});
+	if (token && (response.status === 401 || response.status === 403)) handleAuthExpired();
 	if (!response.ok) throw new Error(`Review request failed: ${response.status}`);
 	return (await response.json()) as T;
 }
@@ -942,6 +894,7 @@ export async function getCourseProgress(documentId: string, jwt: string): Promis
 		`${STRAPI_URL}/api/learning/course-progress/${encodeURIComponent(documentId)}`,
 		{ headers: { Authorization: `Bearer ${jwt}` } },
 	);
+	if (response.status === 401 || response.status === 403) handleAuthExpired();
 	if (!response.ok) throw new Error(`Course progress request failed: ${response.status}`);
 	return (await response.json()).data;
 }

@@ -3,31 +3,14 @@ import { ScrollView, Text, View } from 'react-native';
 import { CourseCard } from '@/components/shared/course-card';
 import { EmptyState, ErrorState, LoadingState } from '@/components/shared/states';
 import { useAsync } from '@/hooks/use-async';
+import { withAppReturn } from '@/lib/routes';
 import {
-	type CourseStatus,
+	getCourseProgress,
 	getCoursesByDocumentIds,
 	getMyCourses,
-	getUserLessonProgress,
 	type StrapiCourse,
 } from '@/lib/strapi';
 import { useJWT } from '@/stores/auth-store';
-
-function courseProgressPercent(
-	course: StrapiCourse,
-	completedIds: Set<string>,
-	status: CourseStatus,
-): number {
-	// `populate=*` may leave the nested lesson unpopulated; fall back to the course status then.
-	const lessonIds = (course.course_lessons ?? [])
-		.map((link) => link.lesson?.documentId)
-		.filter((id): id is string => typeof id === 'string');
-	if (!lessonIds.length) {
-		return status === 'completed' ? 100 : status === 'in_progress' ? 50 : 0;
-	}
-	const done = lessonIds.filter((id) => completedIds.has(id)).length;
-	if (done === lessonIds.length) return 100;
-	return Math.min(Math.round((done / lessonIds.length) * 100), 99);
-}
 
 export default function DerslerimScreen() {
 	const router = useRouter();
@@ -36,23 +19,22 @@ export default function DerslerimScreen() {
 	const { data, loading, error, reload } = useAsync(async () => {
 		if (!jwt) return { courses: [] as StrapiCourse[], progress: new Map<string, number>() };
 		const mine = await getMyCourses(jwt);
-		const [courses, rows] = await Promise.all([
-			getCoursesByDocumentIds(mine.map((item) => item.documentId)),
-			getUserLessonProgress(undefined, jwt),
-		]);
-		const completedIds = new Set(
-			rows.filter((row) => row.isCompleted).map((row) => row.documentId),
-		);
-		const statusById = new Map(mine.map((item) => [item.documentId, item.status]));
-		const progress = new Map(
-			courses.map((course) => [
-				course.documentId,
-				courseProgressPercent(
-					course,
-					completedIds,
-					statusById.get(course.documentId) ?? 'not_started',
-				),
-			]),
+		const courses = await getCoursesByDocumentIds(mine.map((item) => item.documentId));
+		const progress = new Map<string, number>();
+		await Promise.all(
+			courses.map(async (course) => {
+				const courseProgress = await getCourseProgress(course.documentId, jwt);
+				const percentage =
+					courseProgress.totalLessons > 0
+						? (courseProgress.completedLessons / courseProgress.totalLessons) * 100
+						: courseProgress.status === 'completed'
+							? 100
+							: 0;
+				progress.set(
+					course.documentId,
+					percentage === 100 ? 100 : Math.min(Math.round(percentage), 99),
+				);
+			}),
 		);
 		return { courses, progress };
 	}, [jwt]);
@@ -65,7 +47,7 @@ export default function DerslerimScreen() {
 					<EmptyState
 						title="Derslerinizi görmek için giriş yapmanız gerekiyor."
 						actionLabel="Giriş Yap"
-						onAction={() => router.push('/giris')}
+						onAction={() => router.push(withAppReturn('/giris', '/derslerim'))}
 					/>
 				</View>
 			) : loading ? (

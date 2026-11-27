@@ -46,13 +46,10 @@ export function BlogCard({ blog, onPress }: { blog: StrapiBlog; onPress: () => v
 				<Text className="mt-1 text-slate-500 text-sm" numberOfLines={3}>
 					{preview}
 				</Text>
-				<Pressable
-					onPress={onPress}
-					className="mt-3 flex-row items-center justify-center gap-2 rounded-full bg-blue-600 py-3 active:bg-blue-700"
-				>
+				<View className="mt-3 flex-row items-center justify-center gap-2 rounded-full bg-blue-600 py-3">
 					<ExternalLink size={16} color="#ffffff" />
 					<Text className="font-bold text-sm text-white">Yazıyı Oku</Text>
-				</Pressable>
+				</View>
 			</View>
 		</Pressable>
 	);

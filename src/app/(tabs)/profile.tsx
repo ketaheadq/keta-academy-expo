@@ -14,7 +14,7 @@ import {
 	Users,
 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import type { StrapiAuthResponse } from '@/lib/auth';
 import { STRAPI_URL } from '@/lib/strapi';
 import { useAuthStore } from '@/stores/auth-store';
@@ -41,6 +41,8 @@ const LEGAL: MenuEntry[] = [
 export default function ProfileScreen() {
 	const router = useRouter();
 	const { user, signInWithGoogle, signOut, setAuth } = useAuthStore();
+	const isLoading = useAuthStore((state) => state.isLoading);
+	const error = useAuthStore((state) => state.error);
 	const [demoError, setDemoError] = useState(false);
 
 	const signInDemo = async () => {
@@ -81,11 +83,21 @@ export default function ProfileScreen() {
 					</Pressable>
 				) : (
 					<View className="mt-6 w-full items-center gap-3">
+						{error ? (
+							<Text accessibilityRole="alert" className="text-center text-red-600 text-sm">
+								{error}
+							</Text>
+						) : null}
 						<Pressable
-							onPress={signInWithGoogle}
+							onPress={() => void signInWithGoogle()}
+							disabled={isLoading}
 							className="w-full items-center rounded-full bg-blue-600 px-8 py-3 active:bg-blue-700"
 						>
-							<Text className="font-bold text-white">Google ile Giriş Yap</Text>
+							{isLoading ? (
+								<ActivityIndicator size="small" color="#ffffff" />
+							) : (
+								<Text className="font-bold text-white">Google ile Giriş Yap</Text>
+							)}
 						</Pressable>
 						<View className="flex-row gap-3">
 							<Pressable

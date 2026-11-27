@@ -1,6 +1,7 @@
-import { Link, Stack } from 'expo-router';
+import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Check, GraduationCap, HelpCircle, Sparkles, Trophy, Users } from 'lucide-react-native';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { appHref, safeAppReturnPath, withAppReturn } from '@/lib/routes';
 import { useAuthError, useAuthLoading, useAuthStore } from '@/stores/auth-store';
 
 const FEATURES = [
@@ -33,9 +34,18 @@ const BENEFITS = [
 ];
 
 export default function SignUpScreen() {
+	const router = useRouter();
+	const { returnTo: requestedReturnTo } = useLocalSearchParams<{ returnTo?: string }>();
+	const returnTo = safeAppReturnPath(requestedReturnTo);
 	const isLoading = useAuthLoading();
 	const error = useAuthError();
 	const signInWithGoogle = useAuthStore((state) => state.signInWithGoogle);
+
+	const handleGoogleSignIn = async () => {
+		if (await signInWithGoogle(returnTo)) {
+			router.replace(appHref(useAuthStore.getState().returnTo ?? returnTo ?? '/'));
+		}
+	};
 
 	return (
 		<View className="flex-1 bg-white">
@@ -85,7 +95,7 @@ export default function SignUpScreen() {
 					) : null}
 
 					<Pressable
-						onPress={() => void signInWithGoogle()}
+						onPress={handleGoogleSignIn}
 						disabled={isLoading}
 						className="flex-row items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 active:bg-blue-700"
 					>
@@ -116,7 +126,7 @@ export default function SignUpScreen() {
 					<View className="mt-5 border-slate-200 border-t pt-4">
 						<Text className="text-center text-slate-600 text-sm">
 							Zaten hesabınız var mı?{' '}
-							<Link href="/giris">
+							<Link href={withAppReturn('/giris', returnTo)}>
 								<Text className="font-medium text-blue-600">Buradan giriş yapın</Text>
 							</Link>
 						</Text>

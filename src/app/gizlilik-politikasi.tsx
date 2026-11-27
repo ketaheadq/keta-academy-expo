@@ -4,12 +4,11 @@ import type { ReactNode } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { LoadingState } from '@/components/shared/states';
 import { useAsync } from '@/hooks/use-async';
-import { getTermsAndCondition } from '@/lib/strapi';
+import { getPrivacyPolicy } from '@/lib/strapi';
 import { extractTextFromBlocks, formatDateTR } from '@/lib/utils';
 
 export default function PrivacyPolicyScreen() {
-	// The web app's privacy page renders getTermsAndCondition() (getPrivacyPolicy is unused); kept as-is.
-	const { data, loading, error, reload } = useAsync(getTermsAndCondition, []);
+	const { data, loading, error, reload } = useAsync(getPrivacyPolicy, []);
 
 	const paragraphs = extractTextFromBlocks(data?.text)
 		.split('\n\n')
@@ -24,7 +23,7 @@ export default function PrivacyPolicyScreen() {
 			<View className="flex-1 items-center gap-3 px-8 py-20">
 				<Text className="text-center font-bold text-foreground text-xl">Yükleme Hatası</Text>
 				<Text className="text-center text-muted-foreground text-sm">
-					Hizmet şartları yüklenirken bir hata oluştu.
+					Gizlilik politikası yüklenirken bir hata oluştu.
 				</Text>
 				<Pressable
 					onPress={reload}
@@ -52,7 +51,7 @@ export default function PrivacyPolicyScreen() {
 							</Text>
 						))
 					) : (
-						<Text className="text-slate-500 text-sm">Hizmet şartları içeriği bulunamadı.</Text>
+						<Text className="text-slate-500 text-sm">Gizlilik politikası içeriği bulunamadı.</Text>
 					)}
 				</View>
 

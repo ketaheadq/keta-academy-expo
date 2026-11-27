@@ -17,6 +17,7 @@ import { EmptyState, ErrorState, LoadingState } from '@/components/shared/states
 import { YouTubePlayer } from '@/components/shared/youtube-player';
 import { useAsync } from '@/hooks/use-async';
 import { getLessonExams } from '@/lib/deneme';
+import { withAppReturn } from '@/lib/routes';
 import {
 	getCourse,
 	getLessonsByCourseId,
@@ -36,6 +37,8 @@ export default function CourseDetailScreen() {
 	const scrollRef = useRef<ScrollView>(null);
 	const [extraCompleted, setExtraCompleted] = useState<string[]>([]);
 	const [activeQuiz, setActiveQuiz] = useState<StrapiQuiz | null>(null);
+	const [completingId, setCompletingId] = useState<string | null>(null);
+	const [progressError, setProgressError] = useState(false);
 
 	const { data, loading, error, reload } = useAsync(async () => {
 		// Navigating to another course starts from a clean local state.
@@ -103,6 +106,10 @@ export default function CourseDetailScreen() {
 	const isCurrentComplete = current ? completedIds.has(current.documentId) : false;
 	const exam = current ? exams[current.documentId] : undefined;
 	const thumbnail = mediaUrl(course.thumbnail?.url);
+	const coursePath = `/courses/${encodeURIComponent(slug)}${
+		ders_ismi ? `?ders_ismi=${encodeURIComponent(ders_ismi)}` : ''
+	}`;
+	const loginHref = withAppReturn('/giris', coursePath);
 
 	const selectLesson = (index: number) => {
 		const link = links[index];
@@ -112,18 +119,23 @@ export default function CourseDetailScreen() {
 	};
 
 	const markComplete = async (documentId: string) => {
-		if (!jwt || completedIds.has(documentId)) return;
+		if (!jwt || completedIds.has(documentId) || completingId) return;
+		setCompletingId(documentId);
+		setProgressError(false);
 		try {
 			await updateLessonProgress(documentId, true, jwt);
-			setExtraCompleted((prev) => [...prev, documentId]);
+			setExtraCompleted((prev) => (prev.includes(documentId) ? prev : [...prev, documentId]));
 		} catch (cause) {
 			console.error('Could not update lesson progress', cause);
+			setProgressError(true);
+		} finally {
+			setCompletingId(null);
 		}
 	};
 
 	const openQuiz = (quiz: StrapiQuiz) => {
 		if (!jwt) {
-			router.push('/giris');
+			router.push(loginHref);
 			return;
 		}
 		setActiveQuiz(quiz);
@@ -138,7 +150,7 @@ export default function CourseDetailScreen() {
 						<View className="rounded-xl border border-blue-100 bg-blue-50 p-4">
 							<Text className="text-blue-700 text-sm">
 								<Text className="font-bold">Not:</Text> İlerlemenizi kaydetmek için{' '}
-								<Text className="text-blue-600 underline" onPress={() => router.push('/giris')}>
+								<Text className="text-blue-600 underline" onPress={() => router.push(loginHref)}>
 									giriş yapın
 								</Text>
 								.
@@ -210,7 +222,7 @@ export default function CourseDetailScreen() {
 
 									{!jwt ? (
 										<Pressable
-											onPress={() => router.push('/giris')}
+											onPress={() => router.push(loginHref)}
 											className="rounded-xl border border-slate-200 bg-white px-5 py-2.5 active:bg-slate-50"
 										>
 											<Text className="font-semibold text-slate-700 text-sm">Giriş Yap</Text>
@@ -223,10 +235,13 @@ export default function CourseDetailScreen() {
 									) : (
 										<Pressable
 											onPress={() => void markComplete(current.documentId)}
-											className="flex-row items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 active:bg-blue-700"
+											disabled={Boolean(completingId)}
+											className="flex-row items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 active:bg-blue-700 disabled:opacity-50"
 										>
 											<Circle size={16} color="#ffffff" />
-											<Text className="font-semibold text-sm text-white">Tamamlandı İşaretle</Text>
+											<Text className="font-semibold text-sm text-white">
+												{completingId ? 'Kaydediliyor...' : 'Tamamlandı İşaretle'}
+											</Text>
 										</Pressable>
 									)}
 
@@ -242,6 +257,12 @@ export default function CourseDetailScreen() {
 								</View>
 							</View>
 						</View>
+					) : null}
+
+					{progressError ? (
+						<Text className="text-red-600 text-sm">
+							İlerleme kaydedilemedi. Bağlantını kontrol edip tekrar dene.
+						</Text>
 					) : null}
 
 					<View className="rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
@@ -331,7 +352,13 @@ export default function CourseDetailScreen() {
 				</View>
 			</ScrollView>
 			{activeQuiz && jwt ? (
-				<QuizModal visible quiz={activeQuiz} jwt={jwt} onClose={() => setActiveQuiz(null)} />
+				<QuizModal
+					key={activeQuiz.documentId}
+					visible
+					quiz={activeQuiz}
+					jwt={jwt}
+					onClose={() => setActiveQuiz(null)}
+				/>
 			) : null}
 		</>
 	);

@@ -82,16 +82,17 @@ export default function SubjectScreen() {
 
 	const { subject, courses, progress } = data;
 	const Icon = getCourseIcon(subject.icon?.name);
-	const inProgress = courses.filter((course) => (progress.get(course.documentId) ?? 0) > 0);
-	const popular = courses.slice(0, 3);
-	const rest = courses.slice(3);
 	const normalizedQuery = normalizeTurkish(query.trim());
-	const filtered = rest.filter(
+	const filtered = courses.filter(
 		(course) =>
 			!normalizedQuery ||
 			normalizeTurkish(course.title ?? '').includes(normalizedQuery) ||
 			normalizeTurkish(course.description ?? '').includes(normalizedQuery),
 	);
+	const inProgress = filtered.filter((course) => (progress.get(course.documentId) ?? 0) > 0);
+	const popular = filtered.filter((course) => course.isPopular).slice(0, 3);
+	const popularSet = new Set(popular);
+	const rest = filtered.filter((course) => !popularSet.has(course));
 
 	const openCourse = (course: StrapiCourse) => router.push(`/courses/${course.slug}`);
 
@@ -113,7 +114,7 @@ export default function SubjectScreen() {
 					</View>
 
 					{courses.length === 0 ? (
-						<EmptyState title="No courses found" />
+						<EmptyState title="Bu konu için ders bulunamadı" />
 					) : (
 						<>
 							{inProgress.length > 0 ? (
@@ -137,33 +138,40 @@ export default function SubjectScreen() {
 								</View>
 							) : null}
 
-							<View>
-								<SectionHeading title={`Popüler ${subject.title} Dersleri`} />
-								<View className="gap-4">
-									{popular.map((course) => (
-										<CourseCard
-											key={course.documentId}
-											course={course}
-											progress={progress.get(course.documentId) ?? null}
-											hasJwt={!!jwt}
-											onPress={() => openCourse(course)}
-										/>
-									))}
+							<TextInput
+								value={query}
+								onChangeText={setQuery}
+								placeholder="Ders ara..."
+								placeholderTextColor="#94a3b8"
+								className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900"
+							/>
+
+							{filtered.length === 0 ? (
+								<EmptyState title="Aradığınız kriterlere uygun ders bulunamadı" />
+							) : null}
+
+							{popular.length > 0 ? (
+								<View>
+									<SectionHeading title={`Popüler ${subject.title} Dersleri`} />
+									<View className="gap-4">
+										{popular.map((course) => (
+											<CourseCard
+												key={course.documentId}
+												course={course}
+												progress={progress.get(course.documentId) ?? null}
+												hasJwt={!!jwt}
+												onPress={() => openCourse(course)}
+											/>
+										))}
+									</View>
 								</View>
-							</View>
+							) : null}
 
 							{rest.length > 0 ? (
 								<View>
 									<SectionHeading title={`Tüm ${subject.title} Dersleri`} />
-									<TextInput
-										value={query}
-										onChangeText={setQuery}
-										placeholder="Ara..."
-										placeholderTextColor="#94a3b8"
-										className="mb-4 rounded-xl border border-slate-200 bg-white px-4 py-3 text-base text-slate-900"
-									/>
 									<View className="gap-4">
-										{filtered.map((course) => (
+										{rest.map((course) => (
 											<CourseCard
 												key={course.documentId}
 												course={course}

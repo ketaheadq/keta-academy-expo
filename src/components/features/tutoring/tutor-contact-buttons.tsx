@@ -22,7 +22,10 @@ export function TutorContactButtons({
 		<View className="flex-row gap-2">
 			{whatsapp ? (
 				<Pressable
-					onPress={() => void Linking.openURL(whatsapp)}
+					onPress={(event) => {
+						event.stopPropagation();
+						void Linking.openURL(whatsapp);
+					}}
 					className={cn(
 						'flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-[#25D366] active:opacity-80',
 						compact ? 'py-2.5' : 'py-3.5',
@@ -34,7 +37,10 @@ export function TutorContactButtons({
 			) : null}
 			{tel ? (
 				<Pressable
-					onPress={() => void Linking.openURL(tel)}
+					onPress={(event) => {
+						event.stopPropagation();
+						void Linking.openURL(tel);
+					}}
 					className={cn(
 						'flex-row items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white active:bg-slate-50',
 						compact ? 'px-4 py-2.5' : 'flex-1 py-3.5',

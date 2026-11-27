@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 import { RatingStars } from '@/components/shared/rating-stars';
 import { useAsync } from '@/hooks/use-async';
+import { withAppReturn } from '@/lib/routes';
 import {
 	deleteTutorReview,
 	EMPTY_RATING,
@@ -36,7 +37,13 @@ function StarInput({ value, onChange }: { value: number; onChange: (value: numbe
 	);
 }
 
-export function TutorReviews({ tutor }: { tutor: StrapiTutoringProfile }) {
+export function TutorReviews({
+	tutor,
+	returnPath,
+}: {
+	tutor: StrapiTutoringProfile;
+	returnPath?: string;
+}) {
 	const jwt = useJWT();
 	const isAuthenticated = useIsAuthenticated();
 	const [rating, setRating] = useState(0);
@@ -47,12 +54,12 @@ export function TutorReviews({ tutor }: { tutor: StrapiTutoringProfile }) {
 	const publicReviews = useAsync(() => getTutorReviews(tutor.documentId), [tutor.documentId]);
 
 	const myReview = useAsync(
-		async () => (jwt ? await getMyTutorReview(tutor.documentId, jwt).catch(() => null) : null),
+		async () => (jwt ? getMyTutorReview(tutor.documentId, jwt) : null),
 		[tutor.documentId, jwt],
 	);
 
 	useEffect(() => {
-		if (myReview.loading) return;
+		if (myReview.loading || myReview.error) return;
 		const mine = myReview.data;
 		setHasReview(Boolean(mine));
 		if (mine) {
@@ -62,7 +69,7 @@ export function TutorReviews({ tutor }: { tutor: StrapiTutoringProfile }) {
 			setRating(0);
 			setComment('');
 		}
-	}, [myReview.data, myReview.loading]);
+	}, [myReview.data, myReview.loading, myReview.error]);
 
 	const summary = publicReviews.data?.meta ?? EMPTY_RATING;
 	const reviews = publicReviews.data?.data ?? [];
@@ -73,7 +80,7 @@ export function TutorReviews({ tutor }: { tutor: StrapiTutoringProfile }) {
 	};
 
 	const submit = async () => {
-		if (!jwt || !rating || status === 'saving') return;
+		if (!jwt || !rating || status === 'saving' || myReview.loading || myReview.error) return;
 		setStatus('saving');
 		try {
 			await saveTutorReview(tutor.documentId, { rating, comment }, jwt);
@@ -126,75 +133,91 @@ export function TutorReviews({ tutor }: { tutor: StrapiTutoringProfile }) {
 			</View>
 
 			{isAuthenticated && jwt ? (
-				<View className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
-					<Text className="mb-3 font-semibold text-slate-900 text-sm">
-						{hasReview
-							? 'Değerlendirmenizi güncelleyin'
-							: `${tutor.name} hakkında ne düşünüyorsunuz?`}
-					</Text>
-					<StarInput
-						value={rating}
-						onChange={(value) => {
-							setRating(value);
-							setStatus('idle');
-						}}
-					/>
-					<TextInput
-						value={comment}
-						onChangeText={(text) => {
-							setComment(text);
-							setStatus('idle');
-						}}
-						maxLength={1000}
-						multiline
-						placeholder="Deneyiminizi diğer öğrenci ve velilerle paylaşın (isteğe bağlı)"
-						placeholderTextColor="#94a3b8"
-						className="mt-3 rounded-lg border border-slate-200 bg-white p-3 text-slate-900 text-sm"
-						style={{ minHeight: 80, textAlignVertical: 'top' }}
-					/>
-					<View className="mt-3 flex-row flex-wrap items-center gap-3">
-						<Pressable
-							onPress={submit}
-							disabled={!rating || status === 'saving'}
-							className={cn(
-								'rounded-xl bg-blue-600 px-6 py-3 active:bg-blue-700',
-								(!rating || status === 'saving') && 'opacity-50',
-							)}
-						>
-							<Text className="font-bold text-sm text-white">
-								{status === 'saving' ? 'Kaydediliyor...' : hasReview ? 'Güncelle' : 'Gönder'}
-							</Text>
+				myReview.loading ? (
+					<ActivityIndicator size="small" color="#2563eb" />
+				) : myReview.error ? (
+					<View className="mb-6 gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+						<Text className="text-red-700 text-sm">
+							Değerlendirmeniz yüklenemedi. Mevcut değerlendirmenizi silmemek için formu kapattık.
+						</Text>
+						<Pressable onPress={myReview.reload} className="self-start active:opacity-70">
+							<Text className="font-semibold text-red-700 text-sm">Tekrar dene</Text>
 						</Pressable>
-						{hasReview ? (
+					</View>
+				) : (
+					<View className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
+						<Text className="mb-3 font-semibold text-slate-900 text-sm">
+							{hasReview
+								? 'Değerlendirmenizi güncelleyin'
+								: `${tutor.name} hakkında ne düşünüyorsunuz?`}
+						</Text>
+						<StarInput
+							value={rating}
+							onChange={(value) => {
+								setRating(value);
+								setStatus('idle');
+							}}
+						/>
+						<TextInput
+							value={comment}
+							onChangeText={(text) => {
+								setComment(text);
+								setStatus('idle');
+							}}
+							maxLength={1000}
+							multiline
+							placeholder="Deneyiminizi diğer öğrenci ve velilerle paylaşın (isteğe bağlı)"
+							placeholderTextColor="#94a3b8"
+							className="mt-3 rounded-lg border border-slate-200 bg-white p-3 text-slate-900 text-sm"
+							style={{ minHeight: 80, textAlignVertical: 'top' }}
+						/>
+						<View className="mt-3 flex-row flex-wrap items-center gap-3">
 							<Pressable
-								onPress={remove}
-								disabled={status === 'saving'}
-								className="rounded-xl px-4 py-3 active:bg-slate-100"
+								onPress={submit}
+								disabled={
+									!rating || status === 'saving' || myReview.loading || Boolean(myReview.error)
+								}
+								className={cn(
+									'rounded-xl bg-blue-600 px-6 py-3 active:bg-blue-700',
+									(!rating || status === 'saving' || myReview.loading || Boolean(myReview.error)) &&
+										'opacity-50',
+								)}
 							>
-								<Text className="font-medium text-slate-600 text-sm">Değerlendirmemi sil</Text>
+								<Text className="font-bold text-sm text-white">
+									{status === 'saving' ? 'Kaydediliyor...' : hasReview ? 'Güncelle' : 'Gönder'}
+								</Text>
 							</Pressable>
+							{hasReview ? (
+								<Pressable
+									onPress={remove}
+									disabled={status === 'saving'}
+									className="rounded-xl px-4 py-3 active:bg-slate-100"
+								>
+									<Text className="font-medium text-slate-600 text-sm">Değerlendirmemi sil</Text>
+								</Pressable>
+							) : null}
+						</View>
+						{status === 'saved' ? (
+							<Text className="mt-3 text-green-700 text-sm">
+								Teşekkürler, değerlendirmeniz kaydedildi.
+							</Text>
+						) : null}
+						{status === 'error' ? (
+							<Text className="mt-3 text-red-600 text-sm">
+								Bir sorun oluştu, lütfen tekrar deneyin.
+							</Text>
 						) : null}
 					</View>
-					{status === 'saved' ? (
-						<Text className="mt-3 text-green-700 text-sm">
-							Teşekkürler, değerlendirmeniz kaydedildi.
-						</Text>
-					) : null}
-					{status === 'error' ? (
-						<Text className="mt-3 text-red-600 text-sm">
-							Bir sorun oluştu, lütfen tekrar deneyin.
-						</Text>
-					) : null}
-				</View>
+				)
 			) : (
 				<View className="mb-6 rounded-xl border border-slate-200 bg-slate-50 p-4">
 					<Text className="text-slate-600 text-sm">
 						Değerlendirme yapmak için{' '}
-						<Link href="/giris">
+						<Link href={withAppReturn('/giris', returnPath)}>
 							<Text className="font-medium text-blue-600 underline">giriş yapın</Text>
 						</Link>{' '}
 						veya{' '}
-						<Link href="/kayit-ol">
+						<Link href={withAppReturn('/kayit-ol', returnPath)}>
 							<Text className="font-medium text-blue-600 underline">üye olun</Text>
 						</Link>
 						.
@@ -204,6 +227,15 @@ export function TutorReviews({ tutor }: { tutor: StrapiTutoringProfile }) {
 
 			{publicReviews.loading && !publicReviews.data ? (
 				<ActivityIndicator size="small" color="#2563eb" />
+			) : null}
+
+			{publicReviews.error ? (
+				<View className="gap-2 border-slate-100 border-t py-4">
+					<Text className="text-red-600 text-sm">Değerlendirmeler yüklenemedi.</Text>
+					<Pressable onPress={publicReviews.reload} className="self-start active:opacity-70">
+						<Text className="font-semibold text-blue-600 text-sm">Tekrar dene</Text>
+					</Pressable>
+				</View>
 			) : null}
 
 			{reviews.map((review, index) => (

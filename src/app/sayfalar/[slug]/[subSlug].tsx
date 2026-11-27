@@ -144,6 +144,7 @@ export default function SayfaDetayScreen() {
 			content = (
 				<ErrorState
 					message={`${data.page.pageType} verisi yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.`}
+					onRetry={reload}
 				/>
 			);
 		} else {
@@ -186,7 +187,10 @@ export default function SayfaDetayScreen() {
 				<VideoPage video={data.item} />
 			</ScrollView>
 		) : (
-			<ErrorState message="Video verisi yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin." />
+			<ErrorState
+				message="Video verisi yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin."
+				onRetry={reload}
+			/>
 		);
 	} else {
 		headerTitle = data.item?.title ?? data.page.title;
@@ -195,7 +199,10 @@ export default function SayfaDetayScreen() {
 				<BlogArticle blog={data.item} />
 			</ScrollView>
 		) : (
-			<ErrorState message="Blog verisi yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin." />
+			<ErrorState
+				message="Blog verisi yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin."
+				onRetry={reload}
+			/>
 		);
 	}
 

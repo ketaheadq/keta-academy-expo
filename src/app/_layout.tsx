@@ -7,8 +7,10 @@ import { SplashScreen, Stack, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { useUniwind } from 'uniwind';
+import { completeGoogleSignIn } from '@/lib/auth';
+import { appHref } from '@/lib/routes';
 import { NAV_THEME } from '@/lib/theme';
-import { useAuthStore } from '@/stores/auth-store';
+import { useAuthHydrated, useAuthStore } from '@/stores/auth-store';
 
 export {
 	// Catch any errors thrown by the Layout component.
@@ -37,32 +39,59 @@ const HEADER_TITLE_STYLE = {
 };
 
 export default function RootLayout() {
-	const { setAuth, refreshUser } = useAuthStore();
+	const { setAuth, setHydrated, refreshUser } = useAuthStore();
+	const hasHydrated = useAuthHydrated();
 	const router = useRouter();
 	const { theme } = useUniwind();
 
 	useEffect(() => {
-		void refreshUser();
-		void SplashScreen.hideAsync();
-	}, [refreshUser]);
+		let active = true;
+		let subscription: ReturnType<typeof Linking.addEventListener> | undefined;
 
-	useEffect(() => {
-		const handleDeepLink = ({ url }: { url: string }) => {
-			const { path, queryParams } = Linking.parse(url);
-			const jwt = queryParams?.jwt;
-			const user = queryParams?.user;
-			if (path === 'auth-callback' && typeof jwt === 'string' && typeof user === 'string') {
-				setAuth(jwt, JSON.parse(decodeURIComponent(user)));
-				router.replace('/');
+		const handleDeepLink = async (url: string) => {
+			const callback = await completeGoogleSignIn(url);
+			if (!active || !callback) return;
+			if ('error' in callback) {
+				useAuthStore.setState({ error: callback.error, isLoading: false });
+				router.replace('/giris');
+				return;
 			}
+			setAuth(callback.jwt, callback.user, callback.returnTo);
+			router.replace(appHref(callback.returnTo ?? '/'));
 		};
 
-		const subscription = Linking.addEventListener('url', handleDeepLink);
-		void Linking.getInitialURL().then((url) => {
-			if (url) handleDeepLink({ url });
-		});
-		return () => subscription.remove();
-	}, [router, setAuth]);
+		const initialize = async () => {
+			try {
+				await useAuthStore.persist.rehydrate();
+			} catch (error) {
+				console.error('Failed to restore authentication:', error);
+			} finally {
+				if (active) setHydrated(true);
+			}
+			if (!active) return;
+
+			subscription = Linking.addEventListener('url', ({ url }) => {
+				void handleDeepLink(url);
+			});
+			try {
+				const initialUrl = await Linking.getInitialURL();
+				if (initialUrl) await handleDeepLink(initialUrl);
+			} catch (error) {
+				console.error('Failed to handle initial link:', error);
+			}
+			if (!active) return;
+			void refreshUser();
+			void SplashScreen.hideAsync();
+		};
+
+		void initialize();
+		return () => {
+			active = false;
+			subscription?.remove();
+		};
+	}, [refreshUser, router, setAuth, setHydrated]);
+
+	if (!hasHydrated) return null;
 
 	return (
 		<ThemeProvider value={NAV_THEME[theme ?? 'light']}>

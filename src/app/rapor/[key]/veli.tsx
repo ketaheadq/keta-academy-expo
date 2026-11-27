@@ -4,14 +4,14 @@ import { useState } from 'react';
 import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
 import { RaporHazir } from '@/components/features/deneme/rapor-hazir';
 import { VeliForm } from '@/components/features/deneme/veli-form';
-import { EmptyState, LoadingState } from '@/components/shared/states';
+import { EmptyState, ErrorState, LoadingState } from '@/components/shared/states';
 import { useAsync } from '@/hooks/use-async';
 import { getRaporOzeti, raporPdfUrl } from '@/lib/deneme';
 
 export default function VeliPage() {
 	const { key } = useLocalSearchParams<{ key: string }>();
 	const router = useRouter();
-	const { data: rapor, loading } = useAsync(() => getRaporOzeti(key).catch(() => null), [key]);
+	const { data: rapor, loading, error, reload } = useAsync(() => getRaporOzeti(key), [key]);
 	const [sent, setSent] = useState(false);
 
 	if (loading) {
@@ -19,6 +19,15 @@ export default function VeliPage() {
 			<>
 				<Stack.Screen options={{ title: 'Raporu velinle paylaş' }} />
 				<LoadingState />
+			</>
+		);
+	}
+
+	if (error) {
+		return (
+			<>
+				<Stack.Screen options={{ title: 'Rapor yüklenemedi' }} />
+				<ErrorState message={error} onRetry={reload} />
 			</>
 		);
 	}
@@ -65,12 +74,14 @@ export default function VeliPage() {
 					<VeliForm raporAnahtari={key} kaynak="mobil-uygulama" onSuccess={() => setSent(true)} />
 				)}
 
-				<Pressable
-					onPress={() => void Linking.openURL(raporPdfUrl(key))}
-					className="items-center active:opacity-70"
-				>
-					<Text className="text-slate-500 text-sm underline">Raporu tekrar aç (PDF)</Text>
-				</Pressable>
+				{rapor.hazir ? (
+					<Pressable
+						onPress={() => void Linking.openURL(raporPdfUrl(key))}
+						className="items-center active:opacity-70"
+					>
+						<Text className="text-slate-500 text-sm underline">Raporu tekrar aç (PDF)</Text>
+					</Pressable>
+				) : null}
 			</ScrollView>
 		</>
 	);

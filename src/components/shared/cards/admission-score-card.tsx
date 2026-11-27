@@ -50,13 +50,10 @@ export function AdmissionScoreCard({
 					) : (
 						<View />
 					)}
-					<Pressable
-						onPress={onPress}
-						className="flex-row items-center gap-1 rounded-full bg-blue-50 px-4 py-2 active:bg-blue-100"
-					>
+					<View className="flex-row items-center gap-1 rounded-full bg-blue-50 px-4 py-2">
 						<TrendingUp size={14} color="#2563eb" />
 						<Text className="font-bold text-blue-600 text-xs">Detayları Gör</Text>
-					</Pressable>
+					</View>
 				</View>
 			</View>
 		</Pressable>

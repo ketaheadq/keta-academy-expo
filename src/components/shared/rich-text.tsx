@@ -1,5 +1,7 @@
+import { router } from 'expo-router';
 import type * as React from 'react';
-import { Image, Linking, Text, type TextStyle, View } from 'react-native';
+import { Alert, Image, Linking, Text, type TextStyle, View } from 'react-native';
+import { appHref, toAppRoute } from '@/lib/routes';
 import { mediaUrl, type StrapiBlock } from '@/lib/strapi';
 
 type InlineChild = {
@@ -32,6 +34,32 @@ function inlineStyle(child: InlineChild): TextStyle {
 	return style;
 }
 
+function openLink(url: string) {
+	const route = toAppRoute(
+		!url.startsWith('//') && !/^[a-z][a-z\d+.-]*:/i.test(url) && !url.startsWith('/')
+			? `/${url}`
+			: url,
+	);
+	if (route?.startsWith('/') && !route.startsWith('//')) {
+		router.push(appHref(route));
+		return;
+	}
+	try {
+		const parsed = new URL(url);
+		if (
+			(parsed.protocol === 'https:' || parsed.protocol === 'http:') &&
+			(parsed.hostname === 'ketaakademi.app' || parsed.hostname === 'www.ketaakademi.app')
+		) {
+			router.push(appHref(toAppRoute(`${parsed.pathname}${parsed.search}${parsed.hash}`) ?? '/'));
+			return;
+		}
+		if (!['http:', 'https:', 'mailto:', 'tel:'].includes(parsed.protocol)) return;
+		void Linking.openURL(url).catch(() => Alert.alert('Bağlantı açılamadı', url));
+	} catch {
+		Alert.alert('Bağlantı açılamadı', url);
+	}
+}
+
 function renderInline(children: InlineChild[] | undefined, keyPrefix: string): React.ReactNode[] {
 	if (!Array.isArray(children)) return [];
 
@@ -44,7 +72,7 @@ function renderInline(children: InlineChild[] | undefined, keyPrefix: string): R
 				<Text
 					key={key}
 					style={[{ color: '#2563eb', textDecorationLine: 'underline' }, inlineStyle(child)]}
-					onPress={() => void Linking.openURL(url)}
+					onPress={() => openLink(url)}
 				>
 					{renderInline(child.children as InlineChild[] | undefined, key)}
 				</Text>,

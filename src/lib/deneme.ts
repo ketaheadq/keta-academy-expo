@@ -71,30 +71,22 @@ export function resolveMedia(media: Media): Media {
 }
 
 export async function getDenemeler(): Promise<DenemeSummary[]> {
-	try {
-		const response = await fetch(`${STRAPI_URL}/api/denemeler`, {
-			headers: { 'Content-Type': 'application/json' },
-		});
-		if (!response.ok) return [];
-		const json = await response.json();
-		return json.data ?? [];
-	} catch (error) {
-		console.error('Error fetching denemeler:', error);
-		return [];
-	}
+	const response = await fetch(`${STRAPI_URL}/api/denemeler`, {
+		headers: { 'Content-Type': 'application/json' },
+	});
+	if (!response.ok) throw new Error(`Denemeler yüklenemedi (${response.status})`);
+	const json = await response.json();
+	return json.data ?? [];
 }
 
 export async function getDeneme(slug: string): Promise<DenemeDetail | null> {
-	try {
-		const response = await fetch(`${STRAPI_URL}/api/denemeler/${encodeURIComponent(slug)}`, {
-			headers: { 'Content-Type': 'application/json' },
-		});
-		if (!response.ok) return null;
-		const json = await response.json();
-		return json.data ?? null;
-	} catch {
-		return null;
-	}
+	const response = await fetch(`${STRAPI_URL}/api/denemeler/${encodeURIComponent(slug)}`, {
+		headers: { 'Content-Type': 'application/json' },
+	});
+	if (response.status === 404) return null;
+	if (!response.ok) throw new Error(`Deneme yüklenemedi (${response.status})`);
+	const json = await response.json();
+	return json.data ?? null;
 }
 
 /** Lesson documentId → an exam covering one of its topics ("mini deneme" link). */

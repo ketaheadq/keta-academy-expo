@@ -37,8 +37,9 @@ export default function CoursesScreen() {
 	useEffect(load, [load]);
 
 	useEffect(() => {
-		if (!jwt || !courses.length) return;
 		let active = true;
+		setProgress({});
+		if (!jwt || !courses.length) return;
 		void Promise.all(
 			courses.map(async (course) => {
 				try {

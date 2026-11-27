@@ -1,13 +1,119 @@
 import { Play } from 'lucide-react-native';
+import * as React from 'react';
 import { useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Platform, Pressable, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { extractYouTubeVideoId } from '@/lib/utils';
 
-/**
- * Lesson videos are YouTube embeds on the web. Native playback uses a WebView that loads the
- * YouTube IFrame player, so the same `videoURL` values work unchanged.
- */
+const PLAYER_ORIGIN = 'https://ketaakademi.app';
+type WebIframeProps = React.IframeHTMLAttributes<HTMLIFrameElement> & {
+	ref?: React.Ref<HTMLIFrameElement>;
+};
+const WebIframe = 'iframe' as unknown as React.ComponentType<WebIframeProps>;
+
+function playerHtml(videoId: string, origin: string) {
+	return `<!doctype html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<style>html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#000}iframe{width:100%;height:100%;border:0}</style>
+</head>
+<body>
+<div id="player"></div>
+<script>
+var player;
+function post(event) {
+  window.ReactNativeWebView.postMessage(JSON.stringify(event));
+}
+function onYouTubeIframeAPIReady() {
+  player = new YT.Player('player', {
+    videoId: ${JSON.stringify(videoId)},
+    playerVars: { autoplay: 1, playsinline: 1, rel: 0, origin: ${JSON.stringify(origin)} },
+    events: {
+      onReady: function () {
+        player.addEventListener('onStateChange', function (event) {
+          if (event.data === YT.PlayerState.ENDED) post({ event: 'ended' });
+        });
+        post({ event: 'ready' });
+      },
+      onError: function () { post({ event: 'error' }); }
+    }
+  });
+}
+var script = document.createElement('script');
+script.src = 'https://www.youtube.com/iframe_api';
+document.head.appendChild(script);
+</script>
+</body>
+</html>`;
+}
+
+function WebYouTubePlayer({
+	videoId,
+	onEnded,
+	onError,
+}: {
+	videoId: string;
+	onEnded: () => void;
+	onError: () => void;
+}) {
+	const frameRef = useRef<HTMLIFrameElement>(null);
+	const startListening = React.useCallback(() => {
+		frameRef.current?.contentWindow?.postMessage(
+			JSON.stringify({ event: 'listening', id: 'keta-player' }),
+			'https://www.youtube.com',
+		);
+	}, []);
+
+	React.useEffect(() => {
+		const handleMessage = (event: MessageEvent) => {
+			if (
+				event.origin !== 'https://www.youtube.com' ||
+				event.source !== frameRef.current?.contentWindow
+			)
+				return;
+			try {
+				const payload = JSON.parse(event.data);
+				if (payload.event === 'listening') {
+					frameRef.current?.contentWindow?.postMessage(
+						JSON.stringify({ event: 'listening', id: 'keta-player' }),
+						'https://www.youtube.com',
+					);
+				}
+				if (payload.event === 'infoDelivery' && payload.info?.event === 'onReady') {
+					frameRef.current?.contentWindow?.postMessage(
+						JSON.stringify({
+							event: 'command',
+							func: 'addEventListener',
+							args: ['onStateChange'],
+							id: 'keta-listener',
+						}),
+						'https://www.youtube.com',
+					);
+				}
+				if (payload.event === 'onStateChange' && payload.info === 0) onEnded();
+				if (payload.event === 'onError') onError();
+			} catch {
+				return;
+			}
+		};
+		window.addEventListener('message', handleMessage);
+		return () => window.removeEventListener('message', handleMessage);
+	}, [onEnded, onError]);
+
+	return (
+		<WebIframe
+			ref={frameRef}
+			src={`https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&rel=0&origin=${encodeURIComponent(window.location.origin)}`}
+			title="Ders videosu"
+			allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
+			allowFullScreen
+			onLoad={startListening}
+			style={{ width: '100%', height: '100%', border: 0 }}
+		/>
+	);
+}
+
 export function YouTubePlayer({
 	videoURL,
 	height = 220,
@@ -15,17 +121,36 @@ export function YouTubePlayer({
 }: {
 	videoURL?: string | null;
 	height?: number;
-	/** Fired once when playback reaches the end (used to mark a lesson complete). */
 	onEnded?: () => void;
 }) {
 	const videoId = useMemo(() => extractYouTubeVideoId(videoURL), [videoURL]);
 	const [playing, setPlaying] = useState(false);
+	const [failed, setFailed] = useState(false);
 	const endedRef = useRef(false);
 
-	if (!videoId) {
+	const handleEnded = () => {
+		if (endedRef.current) return;
+		endedRef.current = true;
+		onEnded?.();
+	};
+	const handleError = () => setFailed(true);
+
+	if (!videoId || failed) {
 		return (
-			<View style={{ height }} className="items-center justify-center rounded-xl bg-slate-100">
+			<View
+				style={{ height }}
+				className="items-center justify-center gap-3 rounded-xl bg-slate-100"
+			>
 				<Text className="font-medium text-slate-500">Video yüklenemedi</Text>
+				<Pressable
+					onPress={() => {
+						setFailed(false);
+						setPlaying(false);
+					}}
+					className="rounded-full bg-blue-600 px-5 py-2 active:bg-blue-700"
+				>
+					<Text className="font-semibold text-sm text-white">Tekrar dene</Text>
+				</Pressable>
 			</View>
 		);
 	}
@@ -34,9 +159,16 @@ export function YouTubePlayer({
 		return (
 			<Pressable
 				onPress={() => setPlaying(true)}
+				accessibilityRole="button"
+				accessibilityLabel="Videoyu oynat"
 				style={{ height }}
 				className="items-center justify-center overflow-hidden rounded-xl bg-slate-900"
 			>
+				<Image
+					source={{ uri: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` }}
+					resizeMode="cover"
+					style={{ width: '100%', height, position: 'absolute', opacity: 0.55 }}
+				/>
 				<View className="size-16 items-center justify-center rounded-full bg-blue-600">
 					<Play size={30} color="#ffffff" />
 				</View>
@@ -45,53 +177,33 @@ export function YouTubePlayer({
 		);
 	}
 
-	const src = `https://www.youtube.com/embed/${videoId}?autoplay=1&enablejsapi=1&rel=0`;
-	const injected = `
-    (function () {
-      var el = document.createElement('script');
-      el.src = 'https://www.youtube.com/iframe_api';
-      document.head.appendChild(el);
-      var sent = false;
-      function poll() {
-        var f = document.querySelector('iframe');
-        var p = f && f.contentWindow && f.contentWindow.player;
-        if (!sent && p && typeof p.getPlayerState === 'function' && p.getPlayerState() === 0) {
-          sent = true;
-          window.ReactNativeWebView.postMessage(JSON.stringify({ event: 'ended' }));
-        }
-        setTimeout(poll, 700);
-      }
-      setTimeout(poll, 1200);
-    })();
-    true;
-  `;
-
 	return (
 		<View style={{ height }} className="overflow-hidden rounded-xl bg-black">
-			<WebView
-				source={{ uri: src }}
-				style={{ flex: 1 }}
-				injectedJavaScript={injected}
-				javaScriptEnabled
-				domStorageEnabled
-				mediaPlaybackRequiresUserAction={false}
-				allowsFullscreenVideo
-				startInLoadingState
-				renderLoading={() => (
-					<ActivityIndicator className="absolute top-1/2 left-1/2" color="#ffffff" />
-				)}
-				onMessage={(event) => {
-					try {
-						const payload = JSON.parse(event.nativeEvent.data);
-						if (payload?.event === 'ended' && !endedRef.current) {
-							endedRef.current = true;
-							onEnded?.();
+			{Platform.OS === 'web' ? (
+				<WebYouTubePlayer videoId={videoId} onEnded={handleEnded} onError={handleError} />
+			) : (
+				<WebView
+					source={{ html: playerHtml(videoId, PLAYER_ORIGIN), baseUrl: `${PLAYER_ORIGIN}/` }}
+					style={{ flex: 1 }}
+					javaScriptEnabled
+					domStorageEnabled
+					mediaPlaybackRequiresUserAction={false}
+					allowsFullscreenVideo
+					startInLoadingState
+					renderLoading={() => (
+						<ActivityIndicator className="absolute top-1/2 left-1/2" color="#ffffff" />
+					)}
+					onMessage={(event) => {
+						try {
+							const payload = JSON.parse(event.nativeEvent.data);
+							if (payload?.event === 'ended') handleEnded();
+							if (payload?.event === 'error') handleError();
+						} catch {
+							return;
 						}
-					} catch {
-						// Not a message we sent; ignore.
-					}
-				}}
-			/>
+					}}
+				/>
+			)}
 		</View>
 	);
 }

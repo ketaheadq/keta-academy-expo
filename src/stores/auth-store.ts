@@ -1,12 +1,15 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import {
+	clearPendingGoogleAuth,
+	completeGoogleSignIn,
 	convertStrapiUser,
 	getCurrentUser,
 	signInWithGoogle as googleSignIn,
 	type StrapiUser,
 } from '@/lib/auth';
 import { secureStorage } from '@/lib/storage';
+import { setAuthExpiredHandler } from '@/lib/strapi';
 
 interface User {
 	id: string;
@@ -21,65 +24,92 @@ interface AuthState {
 	jwt: string | null;
 	isLoading: boolean;
 	isAuthenticated: boolean;
+	hasHydrated: boolean;
 	error: string | null;
+	returnTo: string | null;
 }
 
 interface AuthActions {
-	signInWithGoogle: () => Promise<void>;
+	signInWithGoogle: (returnTo?: string | null) => Promise<boolean>;
 	signOut: () => Promise<void>;
 	clearError: () => void;
 	setLoading: (loading: boolean) => void;
-	setAuth: (jwt: string, strapiUser: StrapiUser) => void;
+	setAuth: (jwt: string, strapiUser: StrapiUser, returnTo?: string | null) => void;
 	refreshUser: () => Promise<void>;
+	setHydrated: (hydrated: boolean) => void;
 }
 
 type AuthStore = AuthState & AuthActions;
 
+function isUser(value: unknown): value is User {
+	if (!value || typeof value !== 'object') return false;
+	const user = value as Partial<User>;
+	return (
+		typeof user.id === 'string' &&
+		typeof user.email === 'string' &&
+		typeof user.name === 'string' &&
+		typeof user.verified === 'boolean'
+	);
+}
+
 export const useAuthStore = create<AuthStore>()(
 	persist(
 		(set, get) => ({
-			// State
 			user: null,
 			jwt: null,
 			isLoading: false,
 			isAuthenticated: false,
+			hasHydrated: false,
 			error: null,
+			returnTo: null,
 
-			// Actions
-			signInWithGoogle: async () => {
+			signInWithGoogle: async (returnTo?: string | null) => {
 				try {
 					set({ isLoading: true, error: null });
-					const result = await googleSignIn();
+					const result = await googleSignIn(returnTo);
 
-					if (result.type === 'success' && result.url) {
-						// The URL is handled by the deep link listener in _layout.tsx
-						// setAuth will be called which sets isLoading to false
-					} else {
+					if (result.type !== 'success' || !result.url) {
+						await clearPendingGoogleAuth();
 						set({ isLoading: false });
+						return false;
 					}
+
+					const callback = await completeGoogleSignIn(result.url);
+					if (!callback) {
+						const authenticated = get().isAuthenticated;
+						set({ isLoading: false });
+						return authenticated;
+					}
+					if ('error' in callback) {
+						set({ error: callback.error, isLoading: false });
+						return false;
+					}
+
+					get().setAuth(callback.jwt, callback.user, callback.returnTo);
+					return true;
 				} catch (error) {
-					console.error('Failed to initiate Google sign-in:', error);
+					console.error('Failed to sign in with Google:', error);
 					set({
-						error: 'Failed to start Google sign-in. Please try again.',
+						error: 'Google ile giriş yapılamadı. Lütfen tekrar deneyin.',
 						isLoading: false,
 					});
+					return false;
 				}
 			},
 
-			setAuth: (jwt: string, strapiUser: StrapiUser) => {
-				const convertedUser = convertStrapiUser(strapiUser);
+			setAuth: (jwt: string, strapiUser: StrapiUser, returnTo: string | null = null) => {
 				set({
 					jwt,
-					user: convertedUser,
+					user: convertStrapiUser(strapiUser),
 					isAuthenticated: true,
 					isLoading: false,
 					error: null,
+					returnTo,
 				});
 			},
 
 			refreshUser: async () => {
-				const { jwt, signOut } = get();
-
+				const { jwt } = get();
 				if (!jwt) {
 					set({ user: null, isAuthenticated: false });
 					return;
@@ -87,46 +117,71 @@ export const useAuthStore = create<AuthStore>()(
 
 				try {
 					const strapiUser = await getCurrentUser(jwt);
-
+					if (get().jwt !== jwt) return;
 					if (!strapiUser) {
-						signOut();
+						await get().signOut();
 						return;
 					}
-
-					const convertedUser = convertStrapiUser(strapiUser);
-					set({ user: convertedUser, isAuthenticated: true });
+					set({ user: convertStrapiUser(strapiUser), isAuthenticated: true });
 				} catch (error) {
 					console.error('Failed to refresh user:', error);
 				}
 			},
 
 			signOut: async () => {
-				set({
-					user: null,
-					jwt: null,
-					isAuthenticated: false,
-					isLoading: false,
-					error: null,
-				});
+				try {
+					await Promise.all([secureStorage.removeItem('auth-storage'), clearPendingGoogleAuth()]);
+				} catch (error) {
+					console.error('Failed to clear stored authentication:', error);
+				} finally {
+					set({
+						user: null,
+						jwt: null,
+						isAuthenticated: false,
+						isLoading: false,
+						error: null,
+						returnTo: null,
+					});
+				}
 			},
 
 			clearError: () => set({ error: null }),
 			setLoading: (loading: boolean) => set({ isLoading: loading }),
+			setHydrated: (hydrated: boolean) => set({ hasHydrated: hydrated }),
 		}),
 		{
 			name: 'auth-storage',
 			storage: createJSONStorage(() => secureStorage),
+			skipHydration: true,
 			partialize: (state: AuthStore) => ({
 				user: state.user,
 				jwt: state.jwt,
 				isAuthenticated: state.isAuthenticated,
 			}),
+			merge: (persisted, current) => {
+				const stored = persisted as Partial<AuthState> | undefined;
+				const jwt = typeof stored?.jwt === 'string' && stored.jwt ? stored.jwt : null;
+				const storedUser = stored?.user;
+				const user = isUser(storedUser) ? storedUser : null;
+				return {
+					...current,
+					user,
+					jwt,
+					isAuthenticated: Boolean(jwt && user),
+					hasHydrated: false,
+				};
+			},
 		},
 	),
 );
+
+setAuthExpiredHandler(() => {
+	if (useAuthStore.getState().jwt) void useAuthStore.getState().signOut();
+});
 
 export const useUser = () => useAuthStore((state) => state.user);
 export const useIsAuthenticated = () => useAuthStore((state) => state.isAuthenticated);
 export const useAuthLoading = () => useAuthStore((state) => state.isLoading);
 export const useAuthError = () => useAuthStore((state) => state.error);
 export const useJWT = () => useAuthStore((state) => state.jwt);
+export const useAuthHydrated = () => useAuthStore((state) => state.hasHydrated);

@@ -46,13 +46,10 @@ export function VideoCard({ video, onPress }: { video: StrapiVideo; onPress: () 
 						<Text className="font-semibold">Sayfa:</Text> {video.page.title}
 					</Text>
 				) : null}
-				<Pressable
-					onPress={onPress}
-					className="mt-3 flex-row items-center justify-center gap-2 rounded-full bg-blue-600 py-3 active:bg-blue-700"
-				>
+				<View className="mt-3 flex-row items-center justify-center gap-2 rounded-full bg-blue-600 py-3">
 					<Play size={16} color="#ffffff" />
 					<Text className="font-bold text-sm text-white">Videoyu İzle</Text>
-				</Pressable>
+				</View>
 			</View>
 		</Pressable>
 	);

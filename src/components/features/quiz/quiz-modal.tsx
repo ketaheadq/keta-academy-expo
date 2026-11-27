@@ -12,6 +12,7 @@ import {
 } from 'lucide-react-native';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { RichText } from '@/components/shared/rich-text';
 import {
 	type QuizResult,
 	type StrapiAnswerOption,
@@ -19,7 +20,7 @@ import {
 	type StrapiQuiz,
 	submitQuiz,
 } from '@/lib/strapi';
-import { cn, extractTextFromBlocks, formatClock, generateUuid } from '@/lib/utils';
+import { cn, formatClock, generateUuid } from '@/lib/utils';
 
 interface QuizModalProps {
 	visible: boolean;
@@ -33,18 +34,22 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 	const [answers, setAnswers] = useState<Record<number, number>>({});
 	const [result, setResult] = useState<QuizResult | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [submitError, setSubmitError] = useState(false);
+	const [submitError, setSubmitError] = useState<string | null>(null);
+	const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
 	// One id per attempt, reused when retrying a failed submission so the backend can dedupe.
 	const submissionIdRef = useRef<string | null>(null);
+	const expirySubmitAttemptedRef = useRef(false);
 
 	const reset = useCallback(() => {
 		setCurrentIndex(0);
 		setAnswers({});
 		setResult(null);
 		setIsSubmitting(false);
-		setSubmitError(false);
+		setSubmitError(null);
+		setRemainingSeconds(quiz.timeLimit ? quiz.timeLimit * 60 : null);
 		submissionIdRef.current = null;
-	}, []);
+		expirySubmitAttemptedRef.current = false;
+	}, [quiz.timeLimit]);
 
 	useEffect(() => {
 		if (visible) reset();
@@ -55,7 +60,6 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 	const question = questions[currentIndex];
 	const progress = totalQuestions ? ((currentIndex + 1) / totalQuestions) * 100 : 0;
 	const allAnswered = questions.every((q) => answers[q.id] !== undefined);
-	// Display-only timer: like the web app it never counts down.
 	const timeSeconds = quiz.timeLimit ? quiz.timeLimit * 60 : null;
 
 	const options = useMemo(
@@ -63,19 +67,48 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 		[question],
 	);
 
-	const handleSubmit = async () => {
-		setIsSubmitting(true);
-		setSubmitError(false);
-		submissionIdRef.current ??= generateUuid();
-		try {
-			const quizResult = await submitQuiz(quiz.documentId, answers, submissionIdRef.current, jwt);
-			setResult(quizResult);
-		} catch {
-			setSubmitError(true);
-		} finally {
-			setIsSubmitting(false);
+	useEffect(() => {
+		if (!visible || result || timeSeconds === null) return;
+		const timer = setInterval(() => {
+			setRemainingSeconds((seconds) => (seconds === null ? null : Math.max(0, seconds - 1)));
+		}, 1000);
+		return () => clearInterval(timer);
+	}, [visible, result, timeSeconds]);
+
+	const handleSubmit = useCallback(
+		async (automatic = false) => {
+			if (isSubmitting || result || (!automatic && !allAnswered)) return;
+			setIsSubmitting(true);
+			setSubmitError(null);
+			submissionIdRef.current ??= generateUuid();
+			try {
+				const quizResult = await submitQuiz(quiz.documentId, answers, submissionIdRef.current, jwt);
+				setResult(quizResult);
+			} catch {
+				setSubmitError(
+					automatic && remainingSeconds === 0 && !allAnswered
+						? "Süre dolduğu için yarım kalan quiz kaydedilemedi. Quiz'i kapatıp yeniden deneyebilirsiniz."
+						: 'Quiz kaydedilemedi. Lütfen tekrar deneyin.',
+				);
+			} finally {
+				setIsSubmitting(false);
+			}
+		},
+		[allAnswered, answers, isSubmitting, jwt, quiz.documentId, remainingSeconds, result],
+	);
+
+	useEffect(() => {
+		if (
+			visible &&
+			remainingSeconds === 0 &&
+			!result &&
+			!isSubmitting &&
+			!expirySubmitAttemptedRef.current
+		) {
+			expirySubmitAttemptedRef.current = true;
+			void handleSubmit(true);
 		}
-	};
+	}, [visible, remainingSeconds, result, isSubmitting, handleSubmit]);
 
 	return (
 		<Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -93,6 +126,7 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 						</View>
 						<Pressable
 							onPress={onClose}
+							disabled={isSubmitting}
 							accessibilityRole="button"
 							accessibilityLabel="Quizi kapat"
 							className="rounded-full bg-slate-100 p-2 active:bg-slate-200"
@@ -106,7 +140,9 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 								{timeSeconds ? (
 									<View className="flex-row items-center gap-1.5">
 										<Clock size={14} color="#64748b" />
-										<Text className="text-slate-500 text-sm">{formatClock(timeSeconds)}</Text>
+										<Text className="text-slate-500 text-sm">
+											{formatClock(remainingSeconds ?? timeSeconds)}
+										</Text>
 									</View>
 								) : (
 									<View />
@@ -128,25 +164,20 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 				</View>
 
 				{result ? (
-					<ResultScreen
-						quiz={quiz}
-						questions={questions}
-						result={result}
-						onRetake={reset}
-						onClose={onClose}
-					/>
+					<ResultScreen questions={questions} result={result} onRetake={reset} onClose={onClose} />
 				) : question ? (
 					<ScrollView
 						className="flex-1"
 						contentContainerStyle={{ padding: 20, paddingBottom: 40, gap: 16 }}
+						pointerEvents={isSubmitting ? 'none' : 'auto'}
 					>
 						<View className="flex-row gap-3">
 							<View className="h-7 w-7 items-center justify-center rounded-lg bg-blue-600">
 								<Text className="font-bold text-sm text-white">{currentIndex + 1}</Text>
 							</View>
-							<Text className="flex-1 font-medium text-lg text-slate-900">
-								{extractTextFromBlocks(question.text)}
-							</Text>
+							<View className="flex-1">
+								<RichText blocks={question.text} />
+							</View>
 						</View>
 
 						<View className="gap-3">
@@ -155,6 +186,7 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 									key={option.id}
 									option={option}
 									selected={answers[question.id] === option.id}
+									disabled={isSubmitting || remainingSeconds === 0}
 									onSelect={() => setAnswers((prev) => ({ ...prev, [question.id]: option.id }))}
 								/>
 							))}
@@ -171,11 +203,24 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 						</View>
 
 						{submitError ? (
-							<Text className="text-red-600 text-sm">Quiz kaydedilemedi. Tekrar deneyin.</Text>
+							<View className="gap-2">
+								<Text className="text-red-600 text-sm">{submitError}</Text>
+								{remainingSeconds !== 0 || allAnswered ? (
+									<Pressable
+										onPress={() => void handleSubmit(true)}
+										disabled={isSubmitting}
+										className="self-start rounded-full border border-slate-300 px-4 py-2 active:bg-slate-50"
+									>
+										<Text className="font-semibold text-slate-700 text-sm">
+											Gönderimi tekrar dene
+										</Text>
+									</Pressable>
+								) : null}
+							</View>
 						) : null}
 
 						<View className="items-center gap-3">
-							{!allAnswered ? (
+							{!allAnswered && remainingSeconds !== 0 ? (
 								<View className="flex-row items-center gap-1.5">
 									<AlertCircle size={14} color="#d97706" />
 									<Text className="text-amber-600 text-sm">
@@ -185,7 +230,7 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 							) : null}
 							<View className="flex-row items-center justify-between gap-3 self-stretch">
 								<Pressable
-									disabled={currentIndex === 0}
+									disabled={currentIndex === 0 || isSubmitting || remainingSeconds === 0}
 									onPress={() => setCurrentIndex((i) => i - 1)}
 									className={cn(
 										'flex-row items-center gap-2 rounded-xl border border-slate-200 px-5 py-3 active:bg-slate-50',
@@ -212,7 +257,8 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 								) : (
 									<Pressable
 										onPress={() => setCurrentIndex((i) => i + 1)}
-										className="flex-row items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 active:bg-blue-700"
+										disabled={isSubmitting || remainingSeconds === 0}
+										className="flex-row items-center gap-2 rounded-xl bg-blue-600 px-5 py-3 active:bg-blue-700 disabled:opacity-40"
 									>
 										<Text className="font-semibold text-sm text-white">Sonraki</Text>
 										<ArrowRight size={16} color="#ffffff" />
@@ -230,18 +276,22 @@ export default function QuizModal({ visible, quiz, jwt, onClose }: QuizModalProp
 function OptionRow({
 	option,
 	selected,
+	disabled,
 	onSelect,
 }: {
 	option: StrapiAnswerOption;
 	selected: boolean;
+	disabled: boolean;
 	onSelect: () => void;
 }) {
 	return (
 		<Pressable
 			onPress={onSelect}
+			disabled={disabled}
 			className={cn(
 				'flex-row items-center gap-3 rounded-xl border p-4',
 				selected ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-white active:bg-slate-50',
+				disabled && 'opacity-60',
 			)}
 		>
 			<View
@@ -265,13 +315,11 @@ function OptionRow({
 }
 
 function ResultScreen({
-	quiz,
 	questions,
 	result,
 	onRetake,
 	onClose,
 }: {
-	quiz: StrapiQuiz;
 	questions: StrapiQuestion[];
 	result: QuizResult;
 	onRetake: () => void;
@@ -290,13 +338,13 @@ function ResultScreen({
 						<XCircle size={32} color="#dc2626" />
 					)}
 				</View>
-				<Text className="font-bold text-2xl text-slate-900">
-					{result.passed ? 'Tebrikler! 🎉' : 'Tekrar Deneyin! 💪'}
+				<Text className="text-center font-bold text-2xl text-slate-900">
+					{result.passed ? 'Tebrikler!' : 'Tekrar Deneyin!'}
 				</Text>
 				<Text className="text-center text-slate-500">
 					{result.passed
 						? 'Quizi başarıyla tamamladınız!'
-						: `Geçmek için %${quiz.passingScore || 70} gerekli. Puanınız %${result.percentage.toFixed(1)}`}
+						: `Geçmek için gerekli puana ulaşamadınız. Puanınız %${result.percentage.toFixed(1)}`}
 				</Text>
 			</View>
 
@@ -362,7 +410,6 @@ function AttemptRow({
 }) {
 	const index = questions.findIndex((q) => q.id === attempt.questionId);
 	const question = index >= 0 ? questions[index] : undefined;
-	const explanation = extractTextFromBlocks(attempt.explanation);
 	return (
 		<View
 			className={cn(
@@ -380,9 +427,10 @@ function AttemptRow({
 				</View>
 				<View className="flex-1 gap-1">
 					{question ? (
-						<Text className="font-medium text-slate-900">
-							{index + 1}. {extractTextFromBlocks(question.text)}
-						</Text>
+						<View>
+							<Text className="font-medium text-slate-900">{index + 1}. soru</Text>
+							<RichText blocks={question.text} />
+						</View>
 					) : null}
 					<Text className="text-slate-500 text-sm">
 						Cevabınız:{' '}
@@ -400,11 +448,10 @@ function AttemptRow({
 							<Text className="font-semibold text-blue-600">{attempt.correctAnswer}</Text>
 						</Text>
 					) : null}
-					{explanation ? (
+					{attempt.explanation?.length ? (
 						<View className="mt-2 rounded-lg bg-blue-50 p-3">
-							<Text className="text-blue-700 text-sm">
-								<Text className="font-bold">Açıklama:</Text> {explanation}
-							</Text>
+							<Text className="font-bold text-blue-700 text-sm">Açıklama:</Text>
+							<RichText blocks={attempt.explanation} />
 						</View>
 					) : null}
 				</View>

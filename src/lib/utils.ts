@@ -18,29 +18,41 @@ export const normalizeTurkish = (str: string): string => {
 		.replaceAll('ç', 'c');
 };
 
+function extractNodeText(node: any): string {
+	if (typeof node?.text === 'string') return node.text;
+	if (!Array.isArray(node?.children)) return '';
+	return node.children.map(extractNodeText).join('');
+}
+
 export const extractTextFromBlocks = (blocks?: StrapiBlock[] | null): string => {
 	if (!blocks || !Array.isArray(blocks)) return '';
-
-	return blocks
-		.map((block) => block.children?.map((child) => child.text).join('') || '')
-		.join('\n\n');
+	return blocks.map((block) => extractNodeText(block)).join('\n\n');
 };
 
 export function extractYouTubeVideoId(url?: string | null): string | null {
 	if (!url) return null;
-	const patterns = [
-		/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&\n?#]+)/,
-		/youtube\.com\/v\/([^&\n?#]+)/,
-		/youtube\.com\/embed\/([^&\n?#]+)/,
-		/youtu\.be\/([^&\n?#]+)/,
-	];
+	if (/^[a-zA-Z0-9_-]{11}$/.test(url)) return url;
 
-	for (const pattern of patterns) {
-		const match = pattern.exec(url);
-		if (match?.[1]) return match[1];
+	try {
+		const parsed = new URL(url);
+		const hostname = parsed.hostname.replace(/^www\./, '');
+		let id: string | null = null;
+		if (hostname === 'youtu.be') id = parsed.pathname.split('/').filter(Boolean)[0] ?? null;
+		if (
+			hostname === 'youtube.com' ||
+			hostname === 'm.youtube.com' ||
+			hostname === 'youtube-nocookie.com'
+		) {
+			if (parsed.pathname === '/watch') id = parsed.searchParams.get('v');
+			else {
+				const match = /^\/(?:embed|shorts|live|v)\/([^/?#]+)/.exec(parsed.pathname);
+				id = match?.[1] ?? null;
+			}
+		}
+		return id && /^[a-zA-Z0-9_-]{11}$/.test(id) ? id : null;
+	} catch {
+		return null;
 	}
-
-	return null;
 }
 
 export function parseCSVLine(line: string): string[] | null {

@@ -2,7 +2,7 @@ import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { DenemeCard } from '@/components/features/deneme/deneme-card';
-import { EmptyState, LoadingState } from '@/components/shared/states';
+import { EmptyState, ErrorState, LoadingState } from '@/components/shared/states';
 import { useAsync } from '@/hooks/use-async';
 import { type DenemeSummary, getDenemeler, SINAV_TURU_LABEL } from '@/lib/deneme';
 import { cn } from '@/lib/utils';
@@ -14,7 +14,7 @@ type Filter =
 
 export default function DenemeSinavlariScreen() {
 	const router = useRouter();
-	const { data, loading } = useAsync(getDenemeler);
+	const { data, loading, error, reload } = useAsync(getDenemeler);
 	const [filter, setFilter] = useState<Filter>({ kind: 'all' });
 
 	const denemeler = data ?? [];
@@ -57,6 +57,8 @@ export default function DenemeSinavlariScreen() {
 			<Stack.Screen options={{ title: 'Deneme Sınavları' }} />
 			{loading ? (
 				<LoadingState />
+			) : error ? (
+				<ErrorState message={error} onRetry={reload} />
 			) : (
 				<ScrollView className="flex-1 bg-slate-50" contentContainerStyle={{ padding: 16, gap: 16 }}>
 					<View>

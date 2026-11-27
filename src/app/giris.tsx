@@ -1,8 +1,9 @@
-import { Link, Stack } from 'expo-router';
+import { Link, Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { BookOpen, GraduationCap, Shield, Users } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import type { StrapiAuthResponse } from '@/lib/auth';
+import { appHref, safeAppReturnPath, withAppReturn } from '@/lib/routes';
 import { STRAPI_URL } from '@/lib/strapi';
 import {
 	useAuthError,
@@ -15,6 +16,9 @@ import {
 const DEMO_LOGIN_ENABLED = process.env.EXPO_PUBLIC_KETA_DEMO_LOGIN === 'true';
 
 export default function SignInScreen() {
+	const router = useRouter();
+	const { returnTo: requestedReturnTo } = useLocalSearchParams<{ returnTo?: string }>();
+	const returnTo = safeAppReturnPath(requestedReturnTo);
 	const user = useUser();
 	const isAuthenticated = useIsAuthenticated();
 	const isLoading = useAuthLoading();
@@ -45,11 +49,18 @@ export default function SignInScreen() {
 			});
 			if (!response.ok) throw new Error('Demo login failed');
 			const { jwt, user: strapiUser } = (await response.json()) as StrapiAuthResponse;
-			setAuth(jwt, strapiUser);
+			setAuth(jwt, strapiUser, returnTo);
+			router.replace(appHref(returnTo ?? '/'));
 		} catch {
 			setDemoError(true);
 		} finally {
 			setDemoLoading(false);
+		}
+	};
+
+	const handleGoogleSignIn = async () => {
+		if (await signInWithGoogle(returnTo)) {
+			router.replace(appHref(useAuthStore.getState().returnTo ?? returnTo ?? '/'));
 		}
 	};
 
@@ -102,7 +113,7 @@ export default function SignInScreen() {
 							) : null}
 
 							<Pressable
-								onPress={() => void signInWithGoogle()}
+								onPress={handleGoogleSignIn}
 								disabled={isLoading}
 								className="flex-row items-center justify-center gap-2 rounded-xl bg-blue-600 py-3.5 active:bg-blue-700"
 							>
@@ -165,7 +176,7 @@ export default function SignInScreen() {
 							<View className="mt-5 border-slate-200 border-t pt-4">
 								<Text className="text-center text-slate-600 text-sm">
 									Hesabınız yok mu?{' '}
-									<Link href="/kayit-ol">
+									<Link href={withAppReturn('/kayit-ol', returnTo)}>
 										<Text className="font-medium text-blue-600">Buradan kayıt olun</Text>
 									</Link>
 								</Text>

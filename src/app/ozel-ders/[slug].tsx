@@ -135,7 +135,7 @@ export default function TutorProfileScreen() {
 					<RichText blocks={tutor.content} />
 				</View>
 
-				<TutorReviews tutor={tutor} />
+				<TutorReviews tutor={tutor} returnPath={`/ozel-ders/${encodeURIComponent(slug)}`} />
 
 				<View className="rounded-2xl border border-slate-200 bg-white p-5">
 					<Text className="font-bold text-3xl text-slate-900">

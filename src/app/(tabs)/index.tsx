@@ -35,6 +35,7 @@ import {
 import { useJWT } from '@/stores/auth-store';
 
 const SLIDER_INTERVAL = 6000;
+const SLIDER_GAP = 16;
 
 const SAMPLE_TOPICS = [
 	{ label: 'Üslü İfadeler', value: 83 },
@@ -48,23 +49,26 @@ function HomeSlider({ slides }: { slides: Slide[] }) {
 	const itemWidth = width - 40;
 	const listRef = useRef<FlatList<Slide>>(null);
 	const [index, setIndex] = useState(0);
-	const autoplayStopped = useRef(false);
+	const [autoplayPaused, setAutoplayPaused] = useState(false);
 
 	useEffect(() => {
-		if (slides.length < 2 || autoplayStopped.current) return;
+		if (slides.length < 2 || autoplayPaused) return;
 		const timer = setInterval(() => {
 			setIndex((current) => {
 				const next = (current + 1) % slides.length;
-				listRef.current?.scrollToOffset({ offset: next * itemWidth, animated: true });
+				listRef.current?.scrollToOffset({
+					offset: next * (itemWidth + SLIDER_GAP),
+					animated: true,
+				});
 				return next;
 			});
 		}, SLIDER_INTERVAL);
 		return () => clearInterval(timer);
-	}, [slides.length, itemWidth]);
+	}, [slides.length, itemWidth, autoplayPaused]);
 
 	const onScroll = useCallback(
 		(event: NativeSyntheticEvent<NativeScrollEvent>) => {
-			const next = Math.round(event.nativeEvent.contentOffset.x / itemWidth);
+			const next = Math.round(event.nativeEvent.contentOffset.x / (itemWidth + SLIDER_GAP));
 			if (next !== index && next >= 0 && next < slides.length) setIndex(next);
 		},
 		[itemWidth, index, slides.length],
@@ -88,11 +92,11 @@ function HomeSlider({ slides }: { slides: Slide[] }) {
 				pagingEnabled
 				showsHorizontalScrollIndicator={false}
 				onScroll={onScroll}
-				onScrollBeginDrag={() => {
-					autoplayStopped.current = true;
-				}}
+				onScrollBeginDrag={() => setAutoplayPaused(true)}
+				onScrollEndDrag={() => setAutoplayPaused(false)}
+				onMomentumScrollEnd={() => setAutoplayPaused(false)}
 				scrollEventThrottle={16}
-				contentContainerStyle={{ paddingHorizontal: 20, gap: 16 }}
+				contentContainerStyle={{ paddingHorizontal: 20, gap: SLIDER_GAP }}
 				renderItem={({ item }) => (
 					<View style={{ width: itemWidth }} className="overflow-hidden rounded-3xl bg-slate-900">
 						{item.gorselUrl ? (
@@ -131,7 +135,10 @@ function HomeSlider({ slides }: { slides: Slide[] }) {
 						accessibilityLabel="Önceki slayt"
 						onPress={() => {
 							const next = (index - 1 + slides.length) % slides.length;
-							listRef.current?.scrollToOffset({ offset: next * itemWidth, animated: true });
+							listRef.current?.scrollToOffset({
+								offset: next * (itemWidth + SLIDER_GAP),
+								animated: true,
+							});
 							setIndex(next);
 						}}
 						className="rounded-full bg-slate-100 p-1.5 active:bg-slate-200"
@@ -152,7 +159,10 @@ function HomeSlider({ slides }: { slides: Slide[] }) {
 						accessibilityLabel="Sonraki slayt"
 						onPress={() => {
 							const next = (index + 1) % slides.length;
-							listRef.current?.scrollToOffset({ offset: next * itemWidth, animated: true });
+							listRef.current?.scrollToOffset({
+								offset: next * (itemWidth + SLIDER_GAP),
+								animated: true,
+							});
 							setIndex(next);
 						}}
 						className="rounded-full bg-slate-100 p-1.5 active:bg-slate-200"
@@ -180,9 +190,11 @@ export default function HomeScreen() {
 		void getHomeSlides().then((result) => {
 			if (active) setSlides(result);
 		});
-		void getDenemeler().then((result) => {
-			if (active) setDenemeler(result);
-		});
+		void getDenemeler()
+			.then((result) => {
+				if (active) setDenemeler(result);
+			})
+			.catch(() => {});
 		getSubjects()
 			.then((result) => {
 				if (active) setSubjects(result);
@@ -203,8 +215,9 @@ export default function HomeScreen() {
 	}, []);
 
 	useEffect(() => {
-		if (!jwt || !courses.length) return;
 		let active = true;
+		setProgress({});
+		if (!jwt || !courses.length) return;
 		void Promise.all(
 			courses.map(async (course) => {
 				try {
