@@ -1,5 +1,6 @@
 import { MessageCircle, Phone } from 'lucide-react-native';
-import { Linking, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
+import { openExternalUrl } from '@/lib/routes';
 import type { StrapiTutoringProfile } from '@/lib/strapi';
 import { useThemeColors } from '@/lib/theme';
 import { cn, telUrl, tutorWhatsappMessage, whatsappUrl } from '@/lib/utils';
@@ -26,22 +27,22 @@ export function TutorContactButtons({
 				<Pressable
 					onPress={(event) => {
 						event.stopPropagation();
-						void Linking.openURL(whatsapp);
+						openExternalUrl(whatsapp);
 					}}
 					className={cn(
 						'flex-1 flex-row items-center justify-center gap-2 rounded-xl bg-[#25D366] active:opacity-80',
 						compact ? 'py-2.5' : 'py-3.5',
 					)}
 				>
-					<MessageCircle size={compact ? 16 : 20} color="#10231f" />
-					<Text className="font-bold text-[#10231f] text-sm">WhatsApp'tan Yaz</Text>
+					<MessageCircle size={compact ? 16 : 20} color="#0f172a" />
+					<Text className="font-bold text-[#0f172a] text-sm">WhatsApp'tan Yaz</Text>
 				</Pressable>
 			) : null}
 			{tel ? (
 				<Pressable
 					onPress={(event) => {
 						event.stopPropagation();
-						void Linking.openURL(tel);
+						openExternalUrl(tel);
 					}}
 					className={cn(
 						'flex-row items-center justify-center gap-2 rounded-xl border border-input bg-card active:bg-muted',

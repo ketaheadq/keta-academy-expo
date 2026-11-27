@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { describeError } from '@/lib/error-messages';
 
 type AsyncState<T> = {
 	data: T | null;
@@ -34,7 +35,7 @@ export function useAsync<T>(loader: () => Promise<T>, deps: unknown[] = []): Asy
 			})
 			.catch((cause) => {
 				console.error('useAsync loader failed:', cause);
-				if (active) setError(cause instanceof Error ? cause.message : 'Beklenmeyen bir hata');
+				if (active) setError(describeError(cause));
 			})
 			.finally(() => {
 				if (active) setLoading(false);

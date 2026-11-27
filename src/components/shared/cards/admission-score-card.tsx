@@ -21,7 +21,7 @@ export function AdmissionScoreCard({
 			className="mb-3 flex-row overflow-hidden rounded-2xl border border-border bg-card active:bg-muted"
 		>
 			<View className="w-20 items-center justify-center bg-primary px-2 py-4">
-				<Award size={24} color={colors.primaryForeground} />
+				<Award size={24} color={colors.accent} />
 				<Text className="mt-1 text-center font-bold text-primary-foreground text-xs">
 					{item.isPopular ? 'POPÜLER' : 'TABAN'}
 				</Text>
@@ -52,9 +52,9 @@ export function AdmissionScoreCard({
 					) : (
 						<View />
 					)}
-					<View className="flex-row items-center gap-1 rounded-full bg-accent px-4 py-2">
-						<TrendingUp size={14} color={colors.primary} />
-						<Text className="font-bold text-primary text-xs">Detayları Gör</Text>
+					<View className="flex-row items-center gap-1 rounded-full bg-accent/10 px-4 py-2">
+						<TrendingUp size={14} color={colors.accent} />
+						<Text className="font-bold text-accent text-xs">Detayları Gör</Text>
 					</View>
 				</View>
 			</View>

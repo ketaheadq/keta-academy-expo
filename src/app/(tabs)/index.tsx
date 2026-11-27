@@ -10,7 +10,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
 	FlatList,
 	Image,
-	Linking,
 	type NativeScrollEvent,
 	type NativeSyntheticEvent,
 	Pressable,
@@ -26,7 +25,7 @@ import { AnimatedProgress, Reveal } from '@/components/shared/motion';
 import { SectionHeading } from '@/components/shared/states';
 import { type DenemeSummary, getDenemeler } from '@/lib/deneme';
 import { DEFAULT_SLIDES, getHomeSlides, type Slide } from '@/lib/home';
-import { toAppRoute } from '@/lib/routes';
+import { openExternalUrl, toAppRoute } from '@/lib/routes';
 import {
 	getCourseProgress,
 	getPublishedCourses,
@@ -83,7 +82,7 @@ function HomeSlider({ slides }: { slides: Slide[] }) {
 		if (!slide.butonYazisi || !slide.link) return;
 		const route = toAppRoute(slide.link);
 		if (!route) return;
-		if (/^https?:\/\//.test(route)) void Linking.openURL(route);
+		if (/^https?:\/\//.test(route)) openExternalUrl(route);
 		else router.push(route as never);
 	};
 
@@ -103,7 +102,7 @@ function HomeSlider({ slides }: { slides: Slide[] }) {
 				scrollEventThrottle={16}
 				contentContainerStyle={{ paddingHorizontal: 20, gap: SLIDER_GAP }}
 				renderItem={({ item }) => (
-					<View style={{ width: itemWidth }} className="overflow-hidden rounded-3xl bg-[#10231f]">
+					<View style={{ width: itemWidth }} className="overflow-hidden rounded-3xl bg-hero">
 						{item.gorselUrl ? (
 							<View>
 								<Image
@@ -115,22 +114,26 @@ function HomeSlider({ slides }: { slides: Slide[] }) {
 								<View className="absolute inset-x-0 bottom-0 h-24 bg-black/35" />
 							</View>
 						) : (
-							<View className="h-24 w-full bg-primary" />
+							<View className="h-24 w-full bg-accent" />
 						)}
 						<View className="gap-3 p-6">
 							<Text className="font-extrabold text-2xl text-white leading-tight">
 								{item.baslik}
 							</Text>
 							{item.altMetin ? (
-								<Text className="text-slate-300 text-sm leading-relaxed">{item.altMetin}</Text>
+								<Text className="text-hero-foreground/75 text-sm leading-relaxed">
+									{item.altMetin}
+								</Text>
 							) : null}
 							{item.butonYazisi && item.link ? (
 								<Pressable
 									onPress={() => openSlide(item)}
-									className="mt-1 flex-row items-center self-start rounded-full bg-white px-5 py-2.5 active:bg-white/90"
+									className="mt-1 flex-row items-center self-start rounded-full bg-accent px-5 py-2.5 active:bg-accent/90"
 								>
-									<Text className="font-bold text-[#10231f] text-sm">{item.butonYazisi}</Text>
-									<ArrowRight size={16} color="#10231f" style={{ marginLeft: 6 }} />
+									<Text className="font-bold text-accent-foreground text-sm">
+										{item.butonYazisi}
+									</Text>
+									<ArrowRight size={16} color={colors.accentForeground} style={{ marginLeft: 6 }} />
 								</Pressable>
 							) : null}
 						</View>
@@ -329,7 +332,7 @@ export default function HomeScreen() {
 				<View className="mb-8 px-5">
 					<View className="gap-4 rounded-3xl border border-border bg-card p-6">
 						<View className="flex-row items-center gap-3">
-							<View className="size-11 items-center justify-center rounded-2xl bg-accent">
+							<View className="size-11 items-center justify-center rounded-2xl bg-primary/10">
 								<GraduationCap size={22} color={colors.primary} />
 							</View>
 							<Text className="font-extrabold text-foreground text-lg">Çağlar Hoca kimdir?</Text>
@@ -341,7 +344,7 @@ export default function HomeScreen() {
 						</Text>
 						<Pressable
 							onPress={() => router.push('/ozel-ders')}
-							className="self-start rounded-full border border-primary px-5 py-2.5 active:bg-accent"
+							className="self-start rounded-full border border-primary px-5 py-2.5 active:bg-accent/10"
 						>
 							<Text className="font-bold text-primary text-sm">Özel ders bilgisi</Text>
 						</Pressable>
@@ -350,39 +353,39 @@ export default function HomeScreen() {
 
 				<View className="px-5">
 					<Reveal delay={120}>
-						<View className="gap-5 rounded-3xl bg-slate-900 p-6">
-							<Text className="font-extrabold text-white text-xl leading-tight">
+						<View className="gap-5 rounded-3xl bg-hero p-6">
+							<Text className="font-extrabold text-hero-foreground text-xl leading-tight">
 								Veliler için: çocuğunuz nerede eksik, görün
 							</Text>
-							<Text className="text-slate-300 leading-relaxed">
+							<Text className="text-hero-foreground/75 leading-relaxed">
 								Ücretsiz denemeyi çözen öğrencinin PDF analiz raporu hemen hazırlanır: yanlış
 								yaptığı her soru çözümüyle, konu konu başarısı, izlemesi gereken dersler ve Çağlar
 								Hoca'nın notu. İsterseniz raporu 15 dakikada birlikte değerlendiririz.
 							</Text>
 
-							<View className="gap-3 rounded-2xl bg-slate-800 p-4">
-								<Text className="font-semibold text-slate-200 text-xs uppercase tracking-wider">
+							<View className="gap-3 rounded-2xl bg-hero-foreground/10 p-4">
+								<Text className="font-semibold text-hero-foreground/80 text-xs uppercase tracking-wider">
 									Örnek rapor · konu bazında başarı
 								</Text>
 								{SAMPLE_TOPICS.map((topic) => (
 									<View key={topic.label} className="gap-1">
 										<View className="flex-row justify-between">
-											<Text className="text-slate-300 text-xs">{topic.label}</Text>
-											<Text className="font-bold text-slate-100 text-xs">%{topic.value}</Text>
+											<Text className="text-hero-foreground/70 text-xs">{topic.label}</Text>
+											<Text className="font-bold text-hero-foreground text-xs">%{topic.value}</Text>
 										</View>
 										<AnimatedProgress
 											progress={topic.value}
 											className="h-1.5"
-											trackClassName="bg-white/15"
-											color="#8bc9b6"
+											trackClassName="bg-hero-foreground/20"
+											color={colors.accent}
 											accessibilityLabel="Konu ilerlemesi"
 										/>
 									</View>
 								))}
 							</View>
 
-							<View className="border-slate-700 border-l-2 pl-3">
-								<Text className="text-slate-300 text-sm italic leading-relaxed">
+							<View className="border-hero-foreground/25 border-l-2 pl-3">
+								<Text className="text-hero-foreground/80 text-sm italic leading-relaxed">
 									Öncelikle kareköklü ifadelere çalışalım: şu dersi izle → Kareköklü İfadelerde
 									Sadeleştirme
 								</Text>
@@ -391,22 +394,22 @@ export default function HomeScreen() {
 							<View className="gap-3">
 								<Pressable
 									onPress={() => router.push('/deneme-sinavlari')}
-									className="flex-row items-center justify-center rounded-full bg-primary py-3 active:bg-primary/90"
+									className="flex-row items-center justify-center rounded-full bg-accent py-3 active:bg-accent/90"
 								>
-									<Text className="font-bold text-primary-foreground text-sm">
+									<Text className="font-bold text-accent-foreground text-sm">
 										Ücretsiz deneme çöz
 									</Text>
 								</Pressable>
 								<Pressable
 									onPress={() => router.push('/ozel-ders')}
-									className="flex-row items-center justify-center rounded-full border border-slate-500 py-3 active:bg-slate-800"
+									className="flex-row items-center justify-center rounded-full border border-hero-foreground/40 py-3 active:bg-hero-foreground/10"
 								>
-									<Text className="font-bold text-slate-100 text-sm">Deneme dersi için yazın</Text>
+									<Text className="font-bold text-hero-foreground text-sm">
+										Deneme dersi için yazın
+									</Text>
 								</Pressable>
 								<Pressable
-									onPress={() =>
-										void Linking.openURL('https://ketalearn.cloud/ornek-deneme-raporu.pdf')
-									}
+									onPress={() => openExternalUrl('https://ketalearn.cloud/ornek-deneme-raporu.pdf')}
 									className="flex-row items-center justify-center gap-2 py-1 active:opacity-70"
 								>
 									<FileText size={15} color="#93c5fd" />

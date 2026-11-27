@@ -61,9 +61,12 @@ export default function ProfileScreen() {
 	const preference = useThemeStore((state) => state.preference);
 	const setPreference = useThemeStore((state) => state.setPreference);
 	const [demoError, setDemoError] = useState(false);
+	const [demoLoading, setDemoLoading] = useState(false);
 
 	const signInDemo = async () => {
+		if (demoLoading) return;
 		setDemoError(false);
+		setDemoLoading(true);
 		try {
 			const response = await fetch(`${STRAPI_URL}/api/auth/local`, {
 				method: 'POST',
@@ -73,11 +76,14 @@ export default function ProfileScreen() {
 					password: 'KetaDemo!2026',
 				}),
 			});
-			if (!response.ok) throw new Error('Demo login failed');
+			if (!response.ok) throw new Error('Demo girişi başarısız.');
 			const { jwt, user: strapiUser }: StrapiAuthResponse = await response.json();
+			if (!jwt || !strapiUser) throw new Error('Demo login returned no session');
 			setAuth(jwt, strapiUser);
 		} catch {
 			setDemoError(true);
+		} finally {
+			setDemoLoading(false);
 		}
 	};
 
@@ -85,7 +91,7 @@ export default function ProfileScreen() {
 		<ScrollView className="flex-1 bg-background" contentContainerStyle={{ paddingBottom: 40 }}>
 			<Reveal>
 				<View className="items-center border-border border-b bg-card px-6 py-8">
-					<View className="mb-4 size-24 items-center justify-center rounded-full bg-accent">
+					<View className="mb-4 size-24 items-center justify-center rounded-full bg-primary/10">
 						<User size={48} color={colors.primary} />
 					</View>
 					<Text className="text-center font-bold text-foreground text-xl">
@@ -97,7 +103,7 @@ export default function ProfileScreen() {
 
 					{user ? (
 						<Pressable
-							onPress={signOut}
+							onPress={() => void signOut()}
 							className="mt-6 flex-row items-center gap-2 rounded-full bg-destructive/10 px-8 py-3 active:bg-destructive/20"
 						>
 							<LogOut size={18} color={colors.destructive} />
@@ -138,10 +144,11 @@ export default function ProfileScreen() {
 							{process.env.EXPO_PUBLIC_KETA_DEMO_LOGIN === 'true' ? (
 								<Pressable
 									onPress={signInDemo}
-									className="rounded-full bg-primary px-8 py-3 active:bg-primary/90"
+									disabled={demoLoading || isLoading}
+									className="rounded-full bg-accent px-8 py-3 active:opacity-90"
 								>
 									<Text className="font-bold text-primary-foreground">
-										Demo öğrenciyle giriş yap
+										{demoLoading ? 'Giriş yapılıyor...' : 'Demo öğrenciyle giriş yap'}
 									</Text>
 								</Pressable>
 							) : null}
@@ -180,7 +187,7 @@ export default function ProfileScreen() {
 									className={cn(
 										'flex-1 items-center gap-1.5 rounded-xl border px-2 py-3',
 										selected
-											? 'border-primary bg-accent'
+											? 'border-accent bg-accent/10'
 											: 'border-input bg-background active:bg-muted',
 									)}
 								>

@@ -37,7 +37,7 @@ export function VideoPage({ video }: { video: StrapiVideo }) {
 			{youtubeId ? (
 				<YouTubePlayer key={current.id} videoURL={current.href} />
 			) : (
-				<View className="h-52 items-center justify-center rounded-xl bg-slate-900 px-4">
+				<View className="h-52 items-center justify-center rounded-xl bg-hero px-4">
 					<Text className="font-semibold text-lg text-white">Video yüklenemedi</Text>
 					<Text className="mt-2 text-center text-sm text-white/80">
 						Video URL'si geçersiz: {current.href}
@@ -48,7 +48,7 @@ export function VideoPage({ video }: { video: StrapiVideo }) {
 			<Text className="mt-4 font-bold text-2xl text-foreground">{current.title}</Text>
 			{current.isPopular ? (
 				<View className="mt-2 self-start rounded-full bg-accent px-3 py-1">
-					<Text className="font-semibold text-primary text-xs">Popüler</Text>
+					<Text className="font-semibold text-accent-foreground text-xs">Popüler</Text>
 				</View>
 			) : null}
 
@@ -154,7 +154,7 @@ export function VideoPage({ video }: { video: StrapiVideo }) {
 			<View className="mt-6 rounded-2xl border border-border bg-card p-4">
 				<View className="flex-row items-center justify-between">
 					<Text className="font-bold text-foreground text-lg">Videolar</Text>
-					<View className="rounded-full bg-accent px-3 py-1">
+					<View className="rounded-full bg-primary/10 px-3 py-1">
 						<Text className="font-semibold text-primary text-xs">{allVideos.length} Video</Text>
 					</View>
 				</View>
@@ -171,7 +171,7 @@ export function VideoPage({ video }: { video: StrapiVideo }) {
 								onPress={() => setCurrentIndex(index)}
 								className={cn(
 									'flex-row gap-3 rounded-xl border-2 p-3',
-									isCurrent ? 'border-primary bg-accent' : 'border-transparent active:bg-muted',
+									isCurrent ? 'border-accent bg-accent/10' : 'border-transparent active:bg-muted',
 								)}
 							>
 								<View className="h-12 w-16 shrink-0 justify-center overflow-hidden rounded-lg bg-muted">

@@ -22,4 +22,17 @@ export function errorMessage(key?: string | null): string {
 	return errorMessages[key as ErrorMessageKey] ?? 'Bilinmeyen bir hata oluştu.';
 }
 
+/** RN and the web browsers report an unreachable host with different wording. */
+const NETWORK_FAILURE = /network request failed|failed to fetch|load failed/i;
+
+/**
+ * Turns a caught value into text a Turkish user can act on. Library messages are already
+ * Turkish; transport failures only ever arrive as English runtime errors, so they are mapped.
+ */
+export function describeError(cause: unknown): string {
+	if (!(cause instanceof Error)) return errorMessages.server_error;
+	if (NETWORK_FAILURE.test(cause.message)) return errorMessages.network_error;
+	return cause.message || errorMessages.server_error;
+}
+
 export default errorMessages;

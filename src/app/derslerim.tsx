@@ -24,17 +24,21 @@ export default function DerslerimScreen() {
 		const progress = new Map<string, number>();
 		await Promise.all(
 			courses.map(async (course) => {
-				const courseProgress = await getCourseProgress(course.documentId, jwt);
-				const percentage =
-					courseProgress.totalLessons > 0
-						? (courseProgress.completedLessons / courseProgress.totalLessons) * 100
-						: courseProgress.status === 'completed'
-							? 100
+				try {
+					const courseProgress = await getCourseProgress(course.documentId, jwt);
+					const ratio =
+						courseProgress.totalLessons > 0
+							? (courseProgress.completedLessons / courseProgress.totalLessons) * 100
 							: 0;
-				progress.set(
-					course.documentId,
-					percentage === 100 ? 100 : Math.min(Math.round(percentage), 99),
-				);
+					const done = courseProgress.status === 'completed' || ratio >= 100;
+					progress.set(
+						course.documentId,
+						done ? 100 : Math.min(99, Math.max(0, Math.round(ratio))),
+					);
+				} catch {
+					// One course's progress failing shouldn't blank the whole list.
+					progress.set(course.documentId, 0);
+				}
 			}),
 		);
 		return { courses, progress };

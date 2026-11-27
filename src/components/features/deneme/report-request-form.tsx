@@ -5,7 +5,7 @@ import { Pressable, Text, TextInput, View } from 'react-native';
 import { RaporHazir } from '@/components/features/deneme/rapor-hazir';
 import { DenemeApiError, requestReport, type Yakinlik } from '@/lib/deneme';
 import { useThemeColors } from '@/lib/theme';
-import { cn } from '@/lib/utils';
+import { cn, toInternationalDigits } from '@/lib/utils';
 
 const YAKINLIK_OPTIONS: { value: Yakinlik; label: string }[] = [
 	{ value: 'Veli', label: 'Veli' },
@@ -37,8 +37,17 @@ export function ReportRequestForm({
 	const [raporKey, setRaporKey] = useState<string | null>(null);
 
 	const submit = async () => {
-		if (!adSoyad.trim() || !telefon.trim() || !raporIzni) {
-			setError('Lütfen zorunlu alanları doldurun.');
+		// Field-specific messages: the generic one left users guessing which box they missed.
+		if (!adSoyad.trim()) {
+			setError('Lütfen numara sahibinin adını ve soyadını yazın.');
+			return;
+		}
+		if (!toInternationalDigits(telefon)) {
+			setError('Lütfen geçerli bir cep telefonu numarası yazın (05xx xxx xx xx).');
+			return;
+		}
+		if (!raporIzni) {
+			setError('Devam etmek için KVKK onayı gerekiyor.');
 			return;
 		}
 		if (!yakinlik) {
@@ -136,13 +145,15 @@ export function ReportRequestForm({
 									onPress={() => setYakinlik(option.value)}
 									className={cn(
 										'rounded-full border px-4 py-1.5',
-										selected ? 'border-primary bg-primary' : 'border-input bg-card active:bg-muted',
+										selected
+											? 'border-accent bg-accent'
+											: 'border-input bg-card active:bg-accent/10',
 									)}
 								>
 									<Text
 										className={cn(
 											'text-sm',
-											selected ? 'font-semibold text-primary-foreground' : 'text-foreground',
+											selected ? 'font-semibold text-accent-foreground' : 'text-foreground',
 										)}
 									>
 										{option.label}
@@ -220,10 +231,10 @@ function CheckBox({ checked }: { checked: boolean }) {
 		<View
 			className={cn(
 				'mt-0.5 size-5 shrink-0 items-center justify-center rounded border-2',
-				checked ? 'border-primary bg-primary' : 'border-input bg-card',
+				checked ? 'border-accent bg-accent' : 'border-input bg-card',
 			)}
 		>
-			{checked ? <Check size={14} color={colors.primaryForeground} strokeWidth={3} /> : null}
+			{checked ? <Check size={14} color={colors.accentForeground} strokeWidth={3} /> : null}
 		</View>
 	);
 }

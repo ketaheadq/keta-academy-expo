@@ -54,7 +54,7 @@ export function CourseCard({
 						style={{ width: '100%', height: 150 }}
 					/>
 				) : (
-					<View className="h-32 w-full items-center justify-center bg-accent">
+					<View className="h-32 w-full items-center justify-center bg-primary/10">
 						<Icon size={40} color={colors.primary} />
 					</View>
 				)}
@@ -102,13 +102,11 @@ export function CourseCard({
 					<View
 						className={cn(
 							'mt-3 flex-row items-center justify-center rounded-xl py-2.5',
-							done ? 'bg-success/10' : 'bg-accent',
+							done ? 'bg-success/10' : 'bg-accent/10',
 						)}
 					>
 						{done ? <CheckCircle2 size={16} color={colors.success} /> : null}
-						<Text
-							className={cn('font-bold text-sm', done ? 'ml-1.5 text-success' : 'text-primary')}
-						>
+						<Text className={cn('font-bold text-sm', done ? 'ml-1.5 text-success' : 'text-accent')}>
 							{courseButtonLabel(progress ?? null, !!hasJwt)}
 						</Text>
 					</View>
@@ -120,11 +118,11 @@ export function CourseCard({
 
 function Badge({ label, tone = 'slate' }: { label: string; tone?: 'slate' | 'blue' }) {
 	return (
-		<View className={cn('rounded-full px-2.5 py-1', tone === 'blue' ? 'bg-accent' : 'bg-muted')}>
+		<View className={cn('rounded-full px-2.5 py-1', tone === 'blue' ? 'bg-accent/10' : 'bg-muted')}>
 			<Text
 				className={cn(
 					'font-semibold text-xs',
-					tone === 'blue' ? 'text-primary' : 'text-muted-foreground',
+					tone === 'blue' ? 'text-accent' : 'text-muted-foreground',
 				)}
 			>
 				{label}

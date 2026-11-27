@@ -456,7 +456,7 @@ async function fetchStrapiData<T>(endpoint: string, allowForbidden = true): Prom
 	}
 
 	if (!response.ok) {
-		throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+		throw new Error(`Veriler yüklenemedi (${response.status})`);
 	}
 
 	return (await response.json()) as T;
@@ -471,7 +471,7 @@ async function fetchStrapiDataUsingToken<T>(endpoint: string, token: string): Pr
 	});
 
 	if (!response.ok) {
-		throw new Error(`Failed to fetch data: ${response.status} ${response.statusText}`);
+		throw new Error(`Veriler yüklenemedi (${response.status})`);
 	}
 
 	return (await response.json()) as T;
@@ -480,7 +480,7 @@ async function fetchStrapiDataUsingToken<T>(endpoint: string, token: string): Pr
 export async function getSettings(): Promise<StrapiSettings> {
 	const response = await fetchStrapiData<StrapiResponse<StrapiSettings>>('setting?populate=*');
 	if (!response.data?.siteName) {
-		throw new Error('Site settings have not been published or are unavailable');
+		throw new Error('Site ayarları yayımlanmamış.');
 	}
 	return response.data;
 }
@@ -507,7 +507,7 @@ const COURSE_POPULATE = ['thumbnail', 'image', 'icon', 'subject', 'grades', 'cou
 
 export async function getCourse(slug: string): Promise<StrapiCourse | undefined> {
 	const response = await fetchStrapiData<StrapiResponse<StrapiCourse[]>>(
-		`courses?${COURSE_POPULATE}&filters[slug][$eq]=${slug}`,
+		`courses?${COURSE_POPULATE}&filters[slug][$eq]=${encodeURIComponent(slug)}`,
 	);
 	return response.data[0];
 }
@@ -630,7 +630,7 @@ async function learningRequest<T>(path: string, token: string, options?: Request
 		headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
 	});
 	if (response.status === 401 || response.status === 403) handleAuthExpired();
-	if (!response.ok) throw new Error(`Learning request failed: ${response.status}`);
+	if (!response.ok) throw new Error(`İşlem tamamlanamadı (${response.status})`);
 	return (await response.json()).data;
 }
 
@@ -706,7 +706,7 @@ export async function getAdmissionScoreTableDataBySlug(slug: string): Promise<st
 		{ headers: { 'Content-Type': 'application/json' } },
 	);
 	if (response.status === 403) return null;
-	if (!response.ok) throw new Error(`Failed to fetch table data: ${response.statusText}`);
+	if (!response.ok) throw new Error('Puan tablosu yüklenemedi.');
 	const data = await response.json();
 	return data.data && data.data.length > 0 ? data.data[0].tableData : null;
 }
@@ -725,7 +725,7 @@ export async function getUniversities(): Promise<StrapiUniversity[]> {
 export async function getUniversityBySlug(slug: string): Promise<StrapiUniversity | null> {
 	try {
 		const response = await fetchStrapiData<StrapiResponse<StrapiUniversity[]>>(
-			`universities?filters[slug][$eq]=${slug}&populate=*`,
+			`universities?filters[slug][$eq]=${encodeURIComponent(slug)}&populate=*`,
 		);
 		return response.data.length > 0 ? response.data[0] : null;
 	} catch (error) {
@@ -748,7 +748,7 @@ export async function getDepartments(): Promise<StrapiDepartment[]> {
 export async function getDepartmentBySlug(slug: string): Promise<StrapiDepartment | null> {
 	try {
 		const response = await fetchStrapiData<StrapiResponse<StrapiDepartment[]>>(
-			`departments?filters[slug][$eq]=${slug}&populate=*`,
+			`departments?filters[slug][$eq]=${encodeURIComponent(slug)}&populate=*`,
 		);
 		return response.data.length > 0 ? response.data[0] : null;
 	} catch (error) {
@@ -845,7 +845,7 @@ async function reviewRequest<T>(
 		},
 	});
 	if (token && (response.status === 401 || response.status === 403)) handleAuthExpired();
-	if (!response.ok) throw new Error(`Review request failed: ${response.status}`);
+	if (!response.ok) throw new Error(`Yorumlar işlenemedi (${response.status})`);
 	return (await response.json()) as T;
 }
 
@@ -895,6 +895,6 @@ export async function getCourseProgress(documentId: string, jwt: string): Promis
 		{ headers: { Authorization: `Bearer ${jwt}` } },
 	);
 	if (response.status === 401 || response.status === 403) handleAuthExpired();
-	if (!response.ok) throw new Error(`Course progress request failed: ${response.status}`);
+	if (!response.ok) throw new Error(`İlerleme durumu yüklenemedi (${response.status})`);
 	return (await response.json()).data;
 }

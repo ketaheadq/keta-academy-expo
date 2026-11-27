@@ -134,27 +134,27 @@ export default function TutoringListScreen() {
 					className="flex-1 bg-background"
 					showsVerticalScrollIndicator={false}
 				>
-					<View className="bg-foreground px-6 py-12">
-						<Text className="text-center font-bold text-3xl text-background leading-tight">
+					<View className="bg-hero px-6 py-12">
+						<Text className="text-center font-bold text-3xl text-hero-foreground leading-tight">
 							Uzman Öğretmenlerle{' '}
-							<Text className="rounded bg-background px-1 text-warning">Birebir Eğitim</Text>
+							<Text className="rounded bg-hero-foreground px-1 text-accent">Birebir Eğitim</Text>
 						</Text>
-						<Text className="mt-4 text-center text-background/80 text-base leading-relaxed">
+						<Text className="mt-4 text-center text-base text-hero-foreground/80 leading-relaxed">
 							Alanında uzman öğretmenlerle hedeflerinize özel ders alın. Kişiselleştirilmiş bir
 							öğrenme deneyimi ile potansiyelinizi zirveye taşıyın.
 						</Text>
 						<View className="mt-8 gap-3">
 							<Pressable
 								onPress={scrollToTutors}
-								className="items-center rounded-full bg-warning py-3.5 active:opacity-80"
+								className="items-center rounded-full bg-accent py-3.5 active:opacity-80"
 							>
-								<Text className="font-bold text-primary-foreground text-sm">Hemen Başla</Text>
+								<Text className="font-bold text-accent-foreground text-sm">Hemen Başla</Text>
 							</Pressable>
 							<Pressable
 								onPress={scrollToSteps}
-								className="items-center rounded-full border border-input py-3.5 active:bg-background/10"
+								className="items-center rounded-full border border-hero-foreground/30 py-3.5 active:bg-hero-foreground/10"
 							>
-								<Text className="font-bold text-background text-sm">Nasıl Çalışır?</Text>
+								<Text className="font-bold text-hero-foreground text-sm">Nasıl Çalışır?</Text>
 							</Pressable>
 						</View>
 					</View>
@@ -178,14 +178,14 @@ export default function TutoringListScreen() {
 										onPress={() => setSelectedSubject(subject.id)}
 										className={cn(
 											'rounded-full px-4 py-2',
-											selectedSubject === subject.id ? 'bg-primary' : 'bg-muted',
+											selectedSubject === subject.id ? 'bg-accent' : 'bg-muted',
 										)}
 									>
 										<Text
 											className={cn(
 												'font-medium text-sm',
 												selectedSubject === subject.id
-													? 'text-primary-foreground'
+													? 'text-accent-foreground'
 													: 'text-muted-foreground',
 											)}
 										>
@@ -214,13 +214,13 @@ export default function TutoringListScreen() {
 										onPress={() => setSortBy(option.id)}
 										className={cn(
 											'flex-1 items-center rounded-xl border px-2 py-2',
-											sortBy === option.id ? 'border-primary bg-accent' : 'border-input bg-card',
+											sortBy === option.id ? 'border-accent bg-accent/10' : 'border-input bg-card',
 										)}
 									>
 										<Text
 											className={cn(
 												'font-medium text-xs',
-												sortBy === option.id ? 'text-primary' : 'text-muted-foreground',
+												sortBy === option.id ? 'text-accent' : 'text-muted-foreground',
 											)}
 										>
 											{option.label}
@@ -267,8 +267,8 @@ export default function TutoringListScreen() {
 						<View className="mt-8 gap-6">
 							{STEPS.map((step, index) => (
 								<View key={step.title} className="flex-row gap-4">
-									<View className="size-10 items-center justify-center rounded-full bg-warning/10">
-										<Text className="font-bold text-lg text-warning">{index + 1}</Text>
+									<View className="size-10 items-center justify-center rounded-full bg-accent/10">
+										<Text className="font-bold text-accent text-lg">{index + 1}</Text>
 									</View>
 									<View className="flex-1">
 										<Text className="font-bold text-foreground text-lg">{step.title}</Text>
@@ -281,18 +281,18 @@ export default function TutoringListScreen() {
 						</View>
 					</View>
 
-					<View className="items-center bg-foreground px-6 py-12">
-						<Text className="text-center font-bold text-2xl text-background">
+					<View className="items-center bg-hero px-6 py-12">
+						<Text className="text-center font-bold text-2xl text-hero-foreground">
 							Geleceğiniz İçin İlk Adımı Bugün Atın
 						</Text>
-						<Text className="mt-3 text-center text-background/80 text-base leading-relaxed">
+						<Text className="mt-3 text-center text-base text-hero-foreground/80 leading-relaxed">
 							Öğretmeninizi seçin, ücretsiz deneme dersinizi planlayın ve farkı yaşayın.
 						</Text>
 						<Pressable
 							onPress={scrollToTutors}
-							className="mt-6 rounded-full bg-warning px-8 py-3.5 active:opacity-80"
+							className="mt-6 rounded-full bg-accent px-8 py-3.5 active:opacity-80"
 						>
-							<Text className="font-bold text-primary-foreground text-sm">Öğretmenleri Gör</Text>
+							<Text className="font-bold text-accent-foreground text-sm">Öğretmenleri Gör</Text>
 						</Pressable>
 					</View>
 				</ScrollView>

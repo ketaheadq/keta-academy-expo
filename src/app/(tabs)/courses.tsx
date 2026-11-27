@@ -118,7 +118,7 @@ export default function CoursesScreen() {
 								onPress={() => setFiltersOpen((open) => !open)}
 								className={cn(
 									'h-11 w-11 items-center justify-center rounded-xl border active:opacity-70',
-									filtersOpen ? 'border-primary bg-accent' : 'border-input bg-card',
+									filtersOpen ? 'border-accent bg-accent/10' : 'border-input bg-card',
 								)}
 							>
 								<SlidersHorizontal

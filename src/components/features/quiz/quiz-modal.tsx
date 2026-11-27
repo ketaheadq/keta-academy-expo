@@ -348,17 +348,17 @@ function OptionRow({
 				accessibilityState={{ checked: selected, disabled }}
 				className={cn(
 					'flex-row items-center gap-3 rounded-xl border p-4',
-					selected ? 'border-primary bg-accent' : 'border-input bg-card active:bg-muted',
+					selected ? 'border-accent bg-accent/10' : 'border-input bg-card active:bg-muted',
 					disabled && 'opacity-60',
 				)}
 			>
 				<View
 					className={cn(
 						'size-5 items-center justify-center rounded-full border-2',
-						selected ? 'border-primary' : 'border-input',
+						selected ? 'border-accent' : 'border-input',
 					)}
 				>
-					{selected ? <View className="size-2.5 rounded-full bg-primary" /> : null}
+					{selected ? <View className="size-2.5 rounded-full bg-accent" /> : null}
 				</View>
 				<Text
 					className={cn(
@@ -494,7 +494,7 @@ function StatTile({
 							? 'bg-success/10'
 							: tone === 'destructive'
 								? 'bg-destructive/10'
-								: 'bg-accent',
+								: 'bg-primary/10',
 					)}
 				>
 					<Text

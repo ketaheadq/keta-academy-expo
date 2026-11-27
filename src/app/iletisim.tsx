@@ -11,11 +11,12 @@ import {
 	Users,
 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useAsync } from '@/hooks/use-async';
+import { openExternalUrl } from '@/lib/routes';
 import { getContactPage } from '@/lib/strapi';
 import { useThemeColors } from '@/lib/theme';
-import { cn } from '@/lib/utils';
+import { cn, telUrl } from '@/lib/utils';
 
 const FALLBACK_CONTACT = {
 	phone: '05451304287',
@@ -61,17 +62,22 @@ export default function ContactScreen() {
 		}
 	}, []);
 
-	const contact = data ?? FALLBACK_CONTACT;
+	// Editors can leave a single field blank, so fall back per field instead of trusting one object.
+	const contact = {
+		phone: data?.phone || FALLBACK_CONTACT.phone,
+		email: data?.email || FALLBACK_CONTACT.email,
+		address: data?.address || FALLBACK_CONTACT.address,
+	};
 
 	return (
 		<View className="flex-1 bg-background">
 			<Stack.Screen options={{ title: 'İletişim' }} />
 			<ScrollView className="flex-1">
-				<View className="bg-primary px-6 py-12">
-					<Text className="text-center font-bold text-3xl text-primary-foreground leading-tight">
+				<View className="bg-hero px-6 py-12">
+					<Text className="text-center font-bold text-3xl text-hero-foreground leading-tight">
 						Bizimle İletişime Geçin
 					</Text>
-					<Text className="mt-4 text-center text-base text-primary-foreground/85 leading-relaxed">
+					<Text className="mt-4 text-center text-base text-hero-foreground/85 leading-relaxed">
 						Sorularınız, önerileriniz veya destek talepleriniz için buradayız. Size en kısa sürede
 						dönüş yapacağız.
 					</Text>
@@ -79,10 +85,10 @@ export default function ContactScreen() {
 						{HERO_CHIPS.map((chip) => (
 							<View
 								key={chip.label}
-								className="flex-row items-center gap-2 rounded-full bg-primary-foreground/15 px-3 py-1.5"
+								className="flex-row items-center gap-2 rounded-full bg-hero-foreground/15 px-3 py-1.5"
 							>
-								<chip.icon size={14} color={colors.primaryForeground} />
-								<Text className="text-primary-foreground text-sm">{chip.label}</Text>
+								<chip.icon size={14} color={colors.heroForeground} />
+								<Text className="text-hero-foreground text-sm">{chip.label}</Text>
 							</View>
 						))}
 					</View>
@@ -99,14 +105,14 @@ export default function ContactScreen() {
 						</Text>
 
 						<View className="gap-3">
-							<View className="flex-row items-start gap-4 rounded-xl bg-accent p-4">
-								<View className="rounded-lg bg-primary p-2">
-									<Phone size={18} color={colors.primaryForeground} />
+							<View className="flex-row items-start gap-4 rounded-xl bg-secondary p-4">
+								<View className="rounded-lg bg-accent p-2">
+									<Phone size={18} color={colors.accentForeground} />
 								</View>
 								<View className="flex-1">
 									<Text className="font-semibold text-foreground">Telefon</Text>
 									<Pressable
-										onPress={() => void Linking.openURL(`tel:${contact.phone}`)}
+										onPress={() => openExternalUrl(telUrl(contact.phone))}
 										className="self-start active:opacity-70"
 									>
 										<Text className="font-medium text-primary">{contact.phone}</Text>
@@ -117,14 +123,14 @@ export default function ContactScreen() {
 								</View>
 							</View>
 
-							<View className="flex-row items-start gap-4 rounded-xl bg-accent p-4">
-								<View className="rounded-lg bg-primary p-2">
-									<Mail size={18} color={colors.primaryForeground} />
+							<View className="flex-row items-start gap-4 rounded-xl bg-secondary p-4">
+								<View className="rounded-lg bg-accent p-2">
+									<Mail size={18} color={colors.accentForeground} />
 								</View>
 								<View className="flex-1">
 									<Text className="font-semibold text-foreground">E-posta</Text>
 									<Pressable
-										onPress={() => void Linking.openURL(`mailto:${contact.email}`)}
+										onPress={() => openExternalUrl(`mailto:${contact.email}`)}
 										className="self-start active:opacity-70"
 									>
 										<Text className="font-medium text-primary">{contact.email}</Text>
@@ -135,9 +141,9 @@ export default function ContactScreen() {
 								</View>
 							</View>
 
-							<View className="flex-row items-start gap-4 rounded-xl bg-accent p-4">
-								<View className="rounded-lg bg-primary p-2">
-									<MapPin size={18} color={colors.primaryForeground} />
+							<View className="flex-row items-start gap-4 rounded-xl bg-secondary p-4">
+								<View className="rounded-lg bg-accent p-2">
+									<MapPin size={18} color={colors.accentForeground} />
 								</View>
 								<View className="flex-1">
 									<Text className="font-semibold text-foreground">Adres</Text>

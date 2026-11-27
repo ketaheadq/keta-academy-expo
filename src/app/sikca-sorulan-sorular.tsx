@@ -1,7 +1,8 @@
 import { Link, Stack } from 'expo-router';
 import { ChevronDown, ChevronUp, HelpCircle, MessageCircle } from 'lucide-react-native';
 import { useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
+import { openExternalUrl } from '@/lib/routes';
 import { useThemeColors } from '@/lib/theme';
 import { cn } from '@/lib/utils';
 
@@ -48,7 +49,7 @@ export default function FaqScreen() {
 			<ScrollView className="flex-1">
 				<View className="px-5 pt-10 pb-6">
 					<View className="mb-4 flex-row items-center justify-center">
-						<View className="size-14 items-center justify-center rounded-full bg-accent">
+						<View className="size-14 items-center justify-center rounded-full bg-primary/10">
 							<HelpCircle size={28} color={colors.primary} />
 						</View>
 					</View>
@@ -99,9 +100,9 @@ export default function FaqScreen() {
 				</View>
 
 				<View className="mx-5 mb-10 items-center rounded-2xl bg-muted p-6">
-					<View className="mb-4 flex-row items-center gap-2 rounded-full bg-accent px-4 py-1.5">
-						<MessageCircle size={14} color={colors.primary} />
-						<Text className="font-medium text-accent-foreground text-xs">Hala sorunuz mu var?</Text>
+					<View className="mb-4 flex-row items-center gap-2 rounded-full bg-accent/10 px-4 py-1.5">
+						<MessageCircle size={14} color={colors.accent} />
+						<Text className="font-medium text-accent text-xs">Hala sorunuz mu var?</Text>
 					</View>
 					<Text className="text-center font-bold text-foreground text-xl">
 						Size daha fazla yardımcı olabiliriz
@@ -112,7 +113,7 @@ export default function FaqScreen() {
 					</Text>
 					<View className="mt-6 w-full gap-3">
 						<Pressable
-							onPress={() => void Linking.openURL('mailto:info@ketalearn.cloud')}
+							onPress={() => openExternalUrl('mailto:info@ketalearn.cloud')}
 							className="items-center rounded-full bg-primary py-3.5 active:bg-primary/90"
 						>
 							<Text className="font-bold text-primary-foreground text-sm">Bize Ulaşın</Text>

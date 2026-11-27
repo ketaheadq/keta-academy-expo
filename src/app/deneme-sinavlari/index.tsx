@@ -92,14 +92,14 @@ export default function DenemeSinavlariScreen() {
 												className={cn(
 													'rounded-full border px-4 py-2',
 													active
-														? 'border-primary bg-primary'
-														: 'border-input bg-secondary active:bg-accent',
+														? 'border-accent bg-accent'
+														: 'border-input bg-secondary active:bg-accent/10',
 												)}
 											>
 												<Text
 													className={cn(
 														'font-medium text-sm',
-														active ? 'text-primary-foreground' : 'text-secondary-foreground',
+														active ? 'text-accent-foreground' : 'text-secondary-foreground',
 													)}
 												>
 													{option.label}

@@ -10,7 +10,7 @@ import Animated, {
 	withRepeat,
 	withTiming,
 } from 'react-native-reanimated';
-import { useThemeColors } from '@/lib/theme';
+import { type AppTheme, useThemeColors } from '@/lib/theme';
 
 export function Reveal({
 	children,
@@ -59,7 +59,7 @@ export function AnimatedProgress({
 	const reduceMotion = useReducedMotion();
 	const color = requestedColor ?? (tone === 'success' ? colors.success : colors.primary);
 	const width = useSharedValue(0);
-	const normalizedProgress = Math.max(0, Math.min(100, progress));
+	const normalizedProgress = Number.isFinite(progress) ? Math.max(0, Math.min(100, progress)) : 0;
 
 	useEffect(() => {
 		const next = normalizedProgress;
@@ -96,7 +96,7 @@ export function LearningLoader({ label = 'Öğrenmeye hazırlanıyor...' }: { la
 
 	return (
 		<View className="flex-1 items-center justify-center gap-5 px-8 py-20">
-			<View className="size-20 items-center justify-center rounded-full bg-accent">
+			<View className="size-20 items-center justify-center rounded-full bg-primary/10">
 				<BookOpen size={34} color={colors.primary} />
 			</View>
 			<View className="h-3 flex-row items-center gap-2">
@@ -148,41 +148,56 @@ function LearningDot({
 	);
 }
 
+type ConfettiSpec = { x: number; delay: number; tone: keyof AppTheme; rotate: number };
+
 const CONFETTI = [
-	{ x: 22, delay: 0, color: '#2f7d5b', rotate: 24 },
-	{ x: 44, delay: 70, color: '#a47b12', rotate: -18 },
-	{ x: 66, delay: 30, color: '#356b8a', rotate: 38 },
-	{ x: 88, delay: 110, color: '#b66a3c', rotate: -28 },
-	{ x: 34, delay: 150, color: '#356b8a', rotate: 12 },
-	{ x: 76, delay: 190, color: '#2f7d5b', rotate: -36 },
-];
+	{ x: 22, delay: 0, tone: 'accent', rotate: 24 },
+	{ x: 44, delay: 70, tone: 'primary', rotate: -18 },
+	{ x: 66, delay: 30, tone: 'info', rotate: 38 },
+	{ x: 88, delay: 110, tone: 'chart4', rotate: -28 },
+	{ x: 34, delay: 150, tone: 'primary', rotate: 12 },
+	{ x: 76, delay: 190, tone: 'accent', rotate: -36 },
+] as const satisfies readonly ConfettiSpec[];
 
 export function Celebration() {
+	const colors = useThemeColors();
 	const reduceMotion = useReducedMotion();
 	if (reduceMotion) return null;
 
 	return (
 		<View pointerEvents="none" className="absolute inset-x-0 top-0 h-24 items-center">
 			{CONFETTI.map((piece, index) => (
-				<ConfettiPiece key={index} piece={piece} />
+				<ConfettiPiece
+					key={index}
+					color={colors[piece.tone]}
+					delay={piece.delay}
+					rotate={piece.rotate}
+					x={piece.x}
+				/>
 			))}
 		</View>
 	);
 }
 
 function ConfettiPiece({
-	piece,
+	color,
+	delay,
+	rotate,
+	x,
 }: {
-	piece: { x: number; delay: number; color: string; rotate: number };
+	color: string;
+	delay: number;
+	rotate: number;
+	x: number;
 }) {
 	const progress = useSharedValue(0);
 
 	useEffect(() => {
 		progress.value = withDelay(
-			piece.delay,
+			delay,
 			withTiming(1, { duration: 1250, easing: Easing.out(Easing.cubic) }),
 		);
-	}, [piece.delay, progress]);
+	}, [delay, progress]);
 
 	const style = useAnimatedStyle(() => {
 		const value = progress.value;
@@ -190,7 +205,7 @@ function ConfettiPiece({
 			opacity: value < 0.15 ? value / 0.15 : Math.max(0, 1 - (value - 0.65) / 0.35),
 			transform: [
 				{ translateY: -18 + value * 82 },
-				{ rotate: `${piece.rotate + value * 70}deg` },
+				{ rotate: `${rotate + value * 70}deg` },
 				{ scale: 0.7 + Math.sin(value * Math.PI) * 0.45 },
 			],
 		};
@@ -202,18 +217,14 @@ function ConfettiPiece({
 				{
 					position: 'absolute',
 					top: 18,
-					left: `${piece.x}%`,
-					width: indexSize(piece.x),
+					left: `${x}%`,
+					width: x % 3 === 0 ? 10 : 7,
 					height: 7,
 					borderRadius: 3,
-					backgroundColor: piece.color,
+					backgroundColor: color,
 				},
 				style,
 			]}
 		/>
 	);
-}
-
-function indexSize(x: number) {
-	return x % 3 === 0 ? 10 : 7;
 }

@@ -1,4 +1,5 @@
 import type { Href } from 'expo-router';
+import { Alert, Linking } from 'react-native';
 
 export function appHref(path: string): Href {
 	return path as Href;
@@ -39,4 +40,15 @@ export function toAppRoute(link?: string | null): string | null {
 	if (path === '/kurslar') return `/courses${suffix}`;
 	if (path.startsWith('/kurslar/')) return `/courses/${path.slice('/kurslar/'.length)}${suffix}`;
 	return link;
+}
+
+/**
+ * Opens a URL with the system handler (browser, dialer, mail, WhatsApp). `openURL` rejects when
+ * no app claims the scheme, which previously left taps looking dead, so the failure is surfaced.
+ */
+export function openExternalUrl(url?: string | null): void {
+	if (!url) return;
+	void Linking.openURL(url).catch(() => {
+		Alert.alert('Bağlantı açılamadı', 'Bu bağlantıyı açabilecek bir uygulama bulunamadı.');
+	});
 }

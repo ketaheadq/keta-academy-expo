@@ -153,6 +153,22 @@ export function formatNumberTR(value?: number | null): string {
 	return dec ? `${grouped},${dec}` : grouped;
 }
 
+/**
+ * Inverse of `formatNumberTR` for the strings CMS tables actually contain ("1.234,56" → 1234.56).
+ * Needed because `parseFloat("312,4567")` stops at the comma and `Number("1.234")` reads a
+ * thousands-grouped score as one point.
+ */
+export function parseNumberTR(value?: string | number | null): number {
+	if (typeof value === 'number') return Number.isFinite(value) ? value : 0;
+	const text = (value ?? '').replace(/[^\d.,-]/g, '');
+	if (!text) return 0;
+	const decimal = text.lastIndexOf(',');
+	if (decimal === -1) return Number.parseFloat(text.replace(/\.(?=\d{3}(\D|$))/g, '')) || 0;
+	const integer = text.slice(0, decimal).replaceAll(/[.,]/g, '');
+	const fraction = text.slice(decimal + 1).replaceAll(/[.,]/g, '');
+	return Number.parseFloat(`${integer || 0}.${fraction || 0}`) || 0;
+}
+
 /** mm:ss, used by the exam countdown. */
 export function formatClock(totalSeconds: number): string {
 	const seconds = Math.max(0, Math.floor(totalSeconds));

@@ -2,7 +2,7 @@ import { ArrowDown, ArrowUp, ArrowUpDown, ChevronDown, Filter, Search } from 'lu
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useThemeColors } from '@/lib/theme';
-import { cn, normalizeTurkish, parseCSVLine } from '@/lib/utils';
+import { cn, normalizeTurkish, parseCSVLine, parseNumberTR } from '@/lib/utils';
 
 type ColumnType = 'text' | 'number' | 'badge';
 
@@ -155,9 +155,7 @@ export function AdmissionScoreTable({ title, csv }: { title: string; csv: string
 				const bv = b.cells[sortIndex] ?? '';
 				let cmp: number;
 				if (column?.type === 'number') {
-					const an = Number.parseFloat(av.replaceAll(/[",]/g, '')) || 0;
-					const bn = Number.parseFloat(bv.replaceAll(/[",]/g, '')) || 0;
-					cmp = an - bn;
+					cmp = parseNumberTR(av) - parseNumberTR(bv);
 				} else {
 					cmp = normalizeTurkish(av).localeCompare(normalizeTurkish(bv));
 				}
@@ -196,7 +194,7 @@ export function AdmissionScoreTable({ title, csv }: { title: string; csv: string
 						onPress={() => setShowFilters((prev) => !prev)}
 						className={cn(
 							'flex-row items-center gap-2 rounded-full border px-4 py-2.5 active:bg-muted',
-							showFilters ? 'border-primary bg-accent' : 'border-input bg-card',
+							showFilters ? 'border-accent bg-accent/10' : 'border-input bg-card',
 						)}
 					>
 						<Filter size={15} color={showFilters ? colors.primary : colors.foreground} />
@@ -258,13 +256,13 @@ export function AdmissionScoreTable({ title, csv }: { title: string; csv: string
 												}}
 												className={cn(
 													'border-border border-b px-3 py-2.5 active:bg-muted',
-													option === selected && 'bg-accent',
+													option === selected && 'bg-accent/10',
 												)}
 											>
 												<Text
 													className={cn(
 														'text-sm',
-														option === selected ? 'font-bold text-primary' : 'text-foreground',
+														option === selected ? 'font-bold text-accent' : 'text-foreground',
 													)}
 													numberOfLines={1}
 												>
@@ -297,7 +295,7 @@ export function AdmissionScoreTable({ title, csv }: { title: string; csv: string
 									key={column.key}
 									onPress={() => handleSort(column.index)}
 									style={{ width: column.index === 0 ? FIRST_COLUMN_WIDTH : COLUMN_WIDTH }}
-									className="flex-row items-center gap-1 px-3 py-3 active:bg-accent"
+									className="flex-row items-center gap-1 px-3 py-3 active:bg-accent/10"
 								>
 									<Text
 										className="flex-1 font-semibold text-muted-foreground text-xs"

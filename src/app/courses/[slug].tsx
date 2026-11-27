@@ -10,7 +10,7 @@ import {
 	Target,
 } from 'lucide-react-native';
 import { useMemo, useRef, useState } from 'react';
-import { Image, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, Text, View } from 'react-native';
 import QuizModal from '@/components/features/quiz/quiz-modal';
 import { Reveal } from '@/components/shared/motion';
 import { RichText } from '@/components/shared/rich-text';
@@ -18,7 +18,7 @@ import { EmptyState, ErrorState, LoadingState } from '@/components/shared/states
 import { YouTubePlayer } from '@/components/shared/youtube-player';
 import { useAsync } from '@/hooks/use-async';
 import { getLessonExams } from '@/lib/deneme';
-import { withAppReturn } from '@/lib/routes';
+import { openExternalUrl, withAppReturn } from '@/lib/routes';
 import {
 	getCourse,
 	getLessonsByCourseId,
@@ -150,8 +150,8 @@ export default function CourseDetailScreen() {
 			<ScrollView ref={scrollRef} className="flex-1 bg-background">
 				<View className="gap-6 p-4">
 					{!jwt ? (
-						<View className="rounded-xl border border-border bg-accent p-4">
-							<Text className="text-accent-foreground text-sm">
+						<View className="rounded-xl border border-accent/30 bg-accent/10 p-4">
+							<Text className="text-accent text-sm">
 								<Text className="font-bold">Not:</Text> İlerlemenizi kaydetmek için{' '}
 								<Text className="text-primary underline" onPress={() => router.push(loginHref)}>
 									giriş yapın
@@ -180,9 +180,9 @@ export default function CourseDetailScreen() {
 
 									{exam ? (
 										<Link href={`/deneme-sinavlari/${exam.slug}`} asChild>
-											<Pressable className="flex-row items-center gap-2 rounded-xl border border-border bg-accent p-3 active:bg-secondary">
-												<Target size={16} color={colors.primary} />
-												<Text className="flex-1 font-medium text-primary text-sm">
+											<Pressable className="flex-row items-center gap-2 rounded-xl border border-accent/30 bg-accent/10 p-3 active:bg-accent/20">
+												<Target size={16} color={colors.accent} />
+												<Text className="flex-1 font-medium text-accent text-sm">
 													Bu konunun mini denemesini çöz: {exam.baslik}
 												</Text>
 											</Pressable>
@@ -192,9 +192,7 @@ export default function CourseDetailScreen() {
 									{current.attachments?.map((attachment) => (
 										<Pressable
 											key={attachment.id}
-											onPress={() =>
-												void Linking.openURL(mediaUrl(attachment.url) ?? attachment.url)
-											}
+											onPress={() => openExternalUrl(mediaUrl(attachment.url) ?? attachment.url)}
 											className="flex-row items-center gap-2 py-1 active:opacity-70"
 										>
 											<Paperclip size={16} color={colors.primary} />
@@ -254,7 +252,7 @@ export default function CourseDetailScreen() {
 										{current.quiz?.questions?.length ? (
 											<Pressable
 												onPress={() => openQuiz(current.quiz as StrapiQuiz)}
-												className="flex-row items-center gap-2 rounded-xl border border-input bg-secondary px-5 py-2.5 active:bg-accent"
+												className="flex-row items-center gap-2 rounded-xl border border-input bg-secondary px-5 py-2.5 active:bg-accent/10"
 											>
 												<Target size={16} color={colors.secondaryForeground} />
 												<Text className="font-semibold text-secondary-foreground text-sm">
@@ -329,7 +327,7 @@ export default function CourseDetailScreen() {
 											className={cn(
 												'flex-row items-start gap-3 rounded-xl border-2 p-3',
 												active
-													? 'border-primary bg-accent'
+													? 'border-accent bg-accent/10'
 													: 'border-transparent bg-card active:bg-muted',
 											)}
 										>

@@ -161,7 +161,7 @@ export function YouTubePlayer({
 				accessibilityRole="button"
 				accessibilityLabel="Videoyu oynat"
 				style={{ height }}
-				className="items-center justify-center overflow-hidden rounded-xl bg-slate-900"
+				className="items-center justify-center overflow-hidden rounded-xl bg-hero"
 			>
 				<Image
 					source={{ uri: `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` }}

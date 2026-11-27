@@ -162,8 +162,8 @@ function Block({ block, index }: { block: StrapiBlock; index: number }) {
 
 		case 'code':
 			return (
-				<View className="mb-4 rounded-xl bg-slate-900 p-4">
-					<Text className="font-mono text-slate-100 text-sm">
+				<View className="mb-4 rounded-xl bg-hero p-4">
+					<Text className="font-mono text-hero-foreground text-sm">
 						{renderInline(children, key, colors)}
 					</Text>
 				</View>

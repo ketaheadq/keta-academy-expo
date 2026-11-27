@@ -54,10 +54,10 @@ export default function SignUpScreen() {
 			<Stack.Screen options={{ title: 'Kayıt Ol' }} />
 			<ScrollView className="flex-1" contentContainerStyle={{ padding: 20, paddingBottom: 40 }}>
 				<View className="items-center py-6">
-					<View className="mb-4 flex-row items-center gap-2 rounded-full border border-border bg-accent px-4 py-2">
-						<Sparkles size={14} color={colors.primary} />
-						<Text className="font-bold text-accent-foreground text-xs">Yeni</Text>
-						<Text className="text-accent-foreground text-xs">Eğitim yolculuğunuzun ilk adımı</Text>
+					<View className="mb-4 flex-row items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-2">
+						<Sparkles size={14} color={colors.accent} />
+						<Text className="font-bold text-accent text-xs">Yeni</Text>
+						<Text className="text-accent text-xs">Eğitim yolculuğunuzun ilk adımı</Text>
 					</View>
 					<Text className="text-center font-bold text-3xl text-foreground leading-tight">
 						Öğrenme Yolculuğunuza Bugün Başlayın
@@ -75,7 +75,7 @@ export default function SignUpScreen() {
 							className="rounded-2xl border border-border bg-card p-4"
 							style={{ flexGrow: 1, flexBasis: '45%' }}
 						>
-							<View className="mb-3 size-10 items-center justify-center rounded-xl bg-accent">
+							<View className="mb-3 size-10 items-center justify-center rounded-xl bg-primary/10">
 								<feature.icon size={20} color={colors.primary} />
 							</View>
 							<Text className="font-bold text-foreground text-sm">{feature.title}</Text>

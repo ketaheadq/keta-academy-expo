@@ -141,8 +141,8 @@ export function TutorReviews({
 					)}
 				</View>
 				{summary.satisfaction !== null ? (
-					<View className="items-center rounded-xl bg-accent px-4 py-2">
-						<Text className="font-bold text-primary text-xl">%{summary.satisfaction}</Text>
+					<View className="items-center rounded-xl bg-accent/10 px-4 py-2">
+						<Text className="font-bold text-accent text-xl">%{summary.satisfaction}</Text>
 						<Text className="text-muted-foreground text-xs">Memnuniyet</Text>
 					</View>
 				) : null}

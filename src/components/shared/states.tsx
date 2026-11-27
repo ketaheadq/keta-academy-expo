@@ -49,7 +49,7 @@ export function EmptyState({
 		<Reveal>
 			<View className="items-center gap-3 px-8 py-16">
 				{Icon ? (
-					<View className="size-16 items-center justify-center rounded-full bg-accent">
+					<View className="size-16 items-center justify-center rounded-full bg-primary/10">
 						<Icon size={28} color={colors.primary} />
 					</View>
 				) : null}

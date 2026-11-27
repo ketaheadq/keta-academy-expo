@@ -1,8 +1,9 @@
 import { Link } from 'expo-router';
 import { FileText, MessageCircle, Users } from 'lucide-react-native';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { getRaporOzeti, raporPdfUrl } from '@/lib/deneme';
+import { openExternalUrl } from '@/lib/routes';
 import { useThemeColors } from '@/lib/theme';
 
 const POLL_MS = 3000;
@@ -64,18 +65,18 @@ export function RaporHazir({ raporKey, denemeBaslik }: { raporKey: string; denem
 				</Text>
 			) : null}
 			<Pressable
-				onPress={() => void Linking.openURL(pdfUrl)}
+				onPress={() => openExternalUrl(pdfUrl)}
 				className="flex-row items-center justify-center gap-2 rounded-xl bg-primary px-6 py-3.5 active:bg-primary/90"
 			>
 				<FileText size={18} color={colors.primaryForeground} />
 				<Text className="font-bold text-primary-foreground text-sm">PDF raporunu aç</Text>
 			</Pressable>
 			<Pressable
-				onPress={() => void Linking.openURL(`https://wa.me/?text=${encodeURIComponent(shareText)}`)}
+				onPress={() => openExternalUrl(`https://wa.me/?text=${encodeURIComponent(shareText)}`)}
 				className="flex-row items-center justify-center gap-2 rounded-xl bg-[#25D366] px-6 py-3.5 active:opacity-80"
 			>
-				<MessageCircle size={18} color="#10231f" />
-				<Text className="font-bold text-[#10231f] text-sm">WhatsApp'ta paylaş</Text>
+				<MessageCircle size={18} color="#0f172a" />
+				<Text className="font-bold text-[#0f172a] text-sm">WhatsApp'ta paylaş</Text>
 			</Pressable>
 			<Link
 				href={`/rapor/${encodeURIComponent(raporKey)}/veli`}

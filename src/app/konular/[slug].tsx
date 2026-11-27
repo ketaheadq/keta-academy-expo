@@ -106,7 +106,7 @@ export default function SubjectScreen() {
 				<View className="gap-8 p-4">
 					<Reveal delay={20}>
 						<View className="items-center pt-4">
-							<View className="mb-3 rounded-full bg-accent p-3">
+							<View className="mb-3 rounded-full bg-primary/10 p-3">
 								<Icon size={24} color={colors.primary} />
 							</View>
 							<Text className="text-center font-bold text-3xl text-foreground">

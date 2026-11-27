@@ -48,8 +48,8 @@ export function DenemeCard({ deneme, onPress }: { deneme: DenemeSummary; onPress
 				</View>
 
 				<View className="mt-5 flex-row items-center justify-center rounded-xl bg-accent py-2.5">
-					<Text className="font-bold text-primary text-sm">Ücretsiz çöz</Text>
-					<ArrowRight size={16} color={colors.primary} className="ml-1.5" />
+					<Text className="font-bold text-accent-foreground text-sm">Ücretsiz çöz</Text>
+					<ArrowRight size={16} color={colors.accentForeground} className="ml-1.5" />
 				</View>
 			</Pressable>
 		</Reveal>
@@ -61,7 +61,7 @@ function Badge({ label, tone = 'slate' }: { label: string; tone?: 'slate' | 'blu
 		<View
 			className={cn(
 				'rounded-full px-2.5 py-1',
-				tone === 'blue' && 'bg-accent',
+				tone === 'blue' && 'bg-accent/10',
 				tone === 'outline' && 'border border-input bg-card',
 				tone === 'slate' && 'bg-muted',
 			)}
@@ -69,7 +69,7 @@ function Badge({ label, tone = 'slate' }: { label: string; tone?: 'slate' | 'blu
 			<Text
 				className={cn(
 					'font-semibold text-xs',
-					tone === 'blue' ? 'text-primary' : 'text-muted-foreground',
+					tone === 'blue' ? 'text-accent' : 'text-muted-foreground',
 				)}
 			>
 				{label}

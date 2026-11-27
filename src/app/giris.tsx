@@ -49,8 +49,9 @@ export default function SignInScreen() {
 					password: 'KetaDemo!2026',
 				}),
 			});
-			if (!response.ok) throw new Error('Demo login failed');
+			if (!response.ok) throw new Error('Demo girişi başarısız.');
 			const { jwt, user: strapiUser } = (await response.json()) as StrapiAuthResponse;
+			if (!jwt || !strapiUser) throw new Error('Demo girişi oturum döndürmedi.');
 			setAuth(jwt, strapiUser, returnTo);
 			router.replace(appHref(returnTo ?? '/'));
 		} catch {

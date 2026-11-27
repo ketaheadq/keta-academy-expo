@@ -76,7 +76,7 @@ export function BlogArticle({ blog }: { blog: StrapiBlog }) {
 				</Text>
 				<Pressable
 					onPress={share}
-					className="mt-4 flex-row items-center gap-2 rounded-full bg-card px-5 py-2.5 active:bg-accent"
+					className="mt-4 flex-row items-center gap-2 rounded-full bg-card px-5 py-2.5 active:bg-accent/10"
 				>
 					<Share2 size={15} color={colors.primary} />
 					<Text className="font-bold text-primary text-sm">Paylaş</Text>

@@ -1,12 +1,13 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { CheckCircle2 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { RaporHazir } from '@/components/features/deneme/rapor-hazir';
 import { VeliForm } from '@/components/features/deneme/veli-form';
 import { EmptyState, ErrorState, LoadingState } from '@/components/shared/states';
 import { useAsync } from '@/hooks/use-async';
 import { getRaporOzeti, raporPdfUrl } from '@/lib/deneme';
+import { openExternalUrl } from '@/lib/routes';
 import { useThemeColors } from '@/lib/theme';
 
 export default function VeliPage() {
@@ -78,7 +79,7 @@ export default function VeliPage() {
 
 				{rapor.hazir ? (
 					<Pressable
-						onPress={() => void Linking.openURL(raporPdfUrl(key))}
+						onPress={() => openExternalUrl(raporPdfUrl(key))}
 						className="items-center active:opacity-70"
 					>
 						<Text className="text-muted-foreground text-sm underline">Raporu tekrar aç (PDF)</Text>

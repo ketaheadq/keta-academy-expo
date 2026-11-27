@@ -1,5 +1,6 @@
 import { FileText } from 'lucide-react-native';
-import { Image, Linking, Pressable, Text, View } from 'react-native';
+import { Image, Pressable, Text, View } from 'react-native';
+import { openExternalUrl } from '@/lib/routes';
 import { useThemeColors } from '@/lib/theme';
 
 /** The sample report pages and PDF ship with the web app's public folder, not the bundle. */
@@ -9,7 +10,7 @@ const SAMPLE_PAGE_RATIO = 744 / 1052;
 
 export function SampleReport() {
 	const colors = useThemeColors();
-	const openSamplePdf = () => void Linking.openURL(`${WEB_ORIGIN}/ornek-deneme-raporu.pdf`);
+	const openSamplePdf = () => openExternalUrl(`${WEB_ORIGIN}/ornek-deneme-raporu.pdf`);
 
 	return (
 		<View className="rounded-2xl border border-border bg-card p-5 shadow-sm">

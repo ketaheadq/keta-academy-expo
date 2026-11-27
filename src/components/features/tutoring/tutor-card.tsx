@@ -8,8 +8,8 @@ import { formatNumberTR } from '@/lib/utils';
 
 function StatTile({ value, label }: { value: string; label: string }) {
 	return (
-		<View className="flex-1 items-center rounded-lg bg-accent px-1 py-2">
-			<Text className="font-bold text-lg text-primary">{value}</Text>
+		<View className="flex-1 items-center rounded-lg bg-accent/10 px-1 py-2">
+			<Text className="font-bold text-accent text-lg">{value}</Text>
 			<Text className="text-muted-foreground text-xs">{label}</Text>
 		</View>
 	);
@@ -68,8 +68,8 @@ export function TutorCard({
 			{subjects.length > 0 ? (
 				<View className="flex-row flex-wrap gap-2 px-5 pb-4">
 					{subjects.slice(0, 3).map((subject) => (
-						<View key={subject.slug} className="rounded-full bg-accent px-2.5 py-1">
-							<Text className="font-medium text-primary text-xs">{subject.title}</Text>
+						<View key={subject.slug} className="rounded-full bg-accent/10 px-2.5 py-1">
+							<Text className="font-medium text-accent text-xs">{subject.title}</Text>
 						</View>
 					))}
 					{subjects.length > 3 ? (

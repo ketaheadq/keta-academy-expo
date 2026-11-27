@@ -40,7 +40,9 @@ type ExamDraft = {
 	answers: Record<number, string | null>;
 };
 
-const examDraftKey = (slug: string) => `deneme-draft:${encodeURIComponent(slug)}`;
+// expo-secure-store rejects keys outside /^[\w.-]+$/, so the colon and
+// percent-encoding that slugs used to need would throw on every read and write.
+const examDraftKey = (slug: string) => `deneme-draft-${slug.replace(/[^\w.-]/g, '-')}`;
 
 function parseExamDraft(value: string | null, questionCount: number): ExamDraft | null {
 	if (!value || !questionCount) return null;
@@ -272,8 +274,8 @@ function DenemeRunner({ deneme }: { deneme: DenemeDetail }) {
 										<Text className="mb-2 font-semibold text-foreground">Kapsadığı konular</Text>
 										<View className="flex-row flex-wrap gap-2">
 											{deneme.konular.map((konu) => (
-												<View key={konu.slug} className="rounded-full bg-accent px-3 py-1">
-													<Text className="text-primary text-sm">{konu.ad}</Text>
+												<View key={konu.slug} className="rounded-full bg-accent/10 px-3 py-1">
+													<Text className="text-accent text-sm">{konu.ad}</Text>
 												</View>
 											))}
 										</View>
@@ -374,10 +376,10 @@ function RunningStage({
 				<View
 					className={cn(
 						'flex-row items-center gap-1 rounded-full px-3 py-1',
-						urgent ? 'bg-destructive/10' : 'bg-accent',
+						urgent ? 'bg-destructive/10' : 'bg-accent/10',
 					)}
 				>
-					<Clock size={14} color={urgent ? colors.destructive : colors.primary} />
+					<Clock size={14} color={urgent ? colors.destructive : colors.accent} />
 					<Text
 						className={cn(
 							'font-mono font-semibold text-sm',
@@ -419,20 +421,20 @@ function RunningStage({
 											className={cn(
 												'flex-row items-start gap-3 rounded-xl border-2 p-3',
 												selected
-													? 'border-primary bg-accent'
+													? 'border-accent bg-accent/10'
 													: 'border-input bg-card active:bg-muted',
 											)}
 										>
 											<View
 												className={cn(
 													'size-7 shrink-0 items-center justify-center rounded-full',
-													selected ? 'bg-primary' : 'bg-muted',
+													selected ? 'bg-accent' : 'bg-muted',
 												)}
 											>
 												<Text
 													className={cn(
 														'font-bold text-sm',
-														selected ? 'text-primary-foreground' : 'text-foreground',
+														selected ? 'text-accent-foreground' : 'text-foreground',
 													)}
 												>
 													{secenek.harf}
@@ -550,7 +552,7 @@ function RunningStage({
 								disabled={submitting}
 								className={cn(
 									'rounded-xl border border-input px-4 py-2.5',
-									submitting ? 'bg-secondary' : 'bg-muted active:bg-accent',
+									submitting ? 'bg-secondary' : 'bg-muted active:bg-accent/10',
 								)}
 							>
 								<Text
@@ -605,7 +607,7 @@ function ResultStage({
 				</Reveal>
 
 				<Reveal delay={120}>
-					<View className="rounded-2xl border border-border bg-accent p-5">
+					<View className="rounded-2xl border border-accent/30 bg-accent/10 p-5">
 						<Text className="font-bold text-foreground text-xl">
 							Geniş analiz raporunu ister misin?
 						</Text>

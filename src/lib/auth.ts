@@ -47,7 +47,7 @@ const GOOGLE_AUTH_SCHEME = 'ketaakademi';
 
 function createOAuthState(): string {
 	if (!globalThis.crypto?.getRandomValues) {
-		throw new Error('Secure OAuth state generation is unavailable');
+		throw new Error('Giriş güvenliği başlatılamadı.');
 	}
 	const bytes = new Uint8Array(16);
 	globalThis.crypto.getRandomValues(bytes);
@@ -149,7 +149,7 @@ export async function getCurrentUser(jwt: string): Promise<StrapiUser | null> {
 
 	if (response.status === 401 || response.status === 403) return null;
 	if (!response.ok) {
-		throw new Error(`Current user request failed: ${response.status}`);
+		throw new Error('Oturum bilgisi alınamadı.');
 	}
 	return (await response.json()) as StrapiUser;
 }

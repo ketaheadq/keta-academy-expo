@@ -1,9 +1,10 @@
 import { Link, Stack } from 'expo-router';
 import { FileText } from 'lucide-react-native';
 import type { ReactNode } from 'react';
-import { Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { LoadingState } from '@/components/shared/states';
 import { useAsync } from '@/hooks/use-async';
+import { openExternalUrl } from '@/lib/routes';
 import { getTermsAndCondition } from '@/lib/strapi';
 import { useThemeColors } from '@/lib/theme';
 import { extractTextFromBlocks, formatDateTR } from '@/lib/utils';
@@ -66,7 +67,7 @@ export default function TermsOfServiceScreen() {
 					Sorularınız için{' '}
 					<Text
 						className="text-primary underline"
-						onPress={() => void Linking.openURL('mailto:destek@ketaacademy.com')}
+						onPress={() => openExternalUrl('mailto:destek@ketaacademy.com')}
 					>
 						destek@ketaacademy.com
 					</Text>{' '}

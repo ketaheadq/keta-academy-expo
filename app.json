@@ -11,7 +11,7 @@
 		"splash": {
 			"image": "./src/assets/images/splash.png",
 			"resizeMode": "contain",
-			"backgroundColor": "#10231f"
+			"backgroundColor": "#0f172a"
 		},
 		"assetBundlePatterns": ["**/*"],
 		"ios": {
@@ -21,7 +21,7 @@
 			"edgeToEdgeEnabled": true,
 			"adaptiveIcon": {
 				"foregroundImage": "./src/assets/images/adaptive-icon.png",
-				"backgroundColor": "#10231f"
+				"backgroundColor": "#0f172a"
 			}
 		},
 		"web": {

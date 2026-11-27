@@ -55,7 +55,7 @@ export function AnimatedSplash({ ready, onFinish }: { ready: boolean; onFinish: 
 				position: 'absolute',
 				inset: 0,
 				zIndex: 100,
-				backgroundColor: '#10231f',
+				backgroundColor: '#0f172a',
 				alignItems: 'center',
 				justifyContent: 'center',
 			}}
@@ -65,11 +65,11 @@ export function AnimatedSplash({ ready, onFinish }: { ready: boolean; onFinish: 
 					<OrbitRing reduceMotion={reduceMotion} />
 					<OrbitRing reduceMotion={reduceMotion} reverse delay={250} />
 					<View className="size-24 items-center justify-center rounded-full border border-white/15 bg-white/10">
-						<Atom size={52} color="#dcece6" strokeWidth={1.6} />
+						<Atom size={52} color="#fdba74" strokeWidth={1.6} />
 					</View>
 				</View>
 				<Text className="font-extrabold text-3xl text-white tracking-tight">Keta Akademi</Text>
-				<Text className="mt-2 text-[#b9cec6] text-base">Öğrenmek bir keşif.</Text>
+				<Text className="mt-2 text-[#94a3b8] text-base">Öğrenmek bir keşif.</Text>
 				<View className="mt-7 h-1 w-12 overflow-hidden rounded-full bg-white/15">
 					<LoadingLine reduceMotion={reduceMotion} />
 				</View>
@@ -118,7 +118,7 @@ function OrbitRing({
 		width: 144,
 		height: 62,
 		borderWidth: 1,
-		borderColor: 'rgba(139, 201, 182, 0.32)',
+		borderColor: 'rgba(245, 158, 11, 0.34)',
 		borderRadius: 999,
 		transform: [{ rotate: `${rotation.value + (reverse ? 60 : 0)}deg` }],
 	}));
@@ -144,7 +144,7 @@ function LoadingLine({ reduceMotion }: { reduceMotion: boolean }) {
 	const style = useAnimatedStyle(() => ({
 		width: `${progress.value * 100}%`,
 		height: '100%',
-		backgroundColor: '#8bc9b6',
+		backgroundColor: '#f59e0b',
 		borderRadius: 999,
 	}));
 
@@ -179,7 +179,7 @@ function FloatingSymbol({
 
 	return (
 		<Animated.View style={[{ position: 'absolute' }, position, style]}>
-			<Icon size={24} color="#8bc9b6" strokeWidth={1.5} />
+			<Icon size={24} color="#93c5fd" strokeWidth={1.5} />
 		</Animated.View>
 	);
 }

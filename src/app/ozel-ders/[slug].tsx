@@ -20,8 +20,8 @@ import { formatNumberTR } from '@/lib/utils';
 
 function StatTile({ value, label }: { value: string; label: string }) {
 	return (
-		<View className="flex-1 items-center rounded-xl bg-accent px-1 py-3">
-			<Text className="font-bold text-lg text-primary">{value}</Text>
+		<View className="flex-1 items-center rounded-xl bg-accent/10 px-1 py-3">
+			<Text className="font-bold text-accent text-lg">{value}</Text>
 			<Text className="text-center text-muted-foreground text-xs">{label}</Text>
 		</View>
 	);
@@ -100,8 +100,8 @@ export default function TutorProfileScreen() {
 					{(tutor.subjects ?? []).length > 0 ? (
 						<View className="mt-3 flex-row flex-wrap gap-2">
 							{tutor.subjects.map((subject) => (
-								<View key={subject.slug} className="rounded-full bg-accent px-3 py-1">
-									<Text className="font-medium text-primary text-sm">{subject.title}</Text>
+								<View key={subject.slug} className="rounded-full bg-accent/10 px-3 py-1">
+									<Text className="font-medium text-accent text-sm">{subject.title}</Text>
 								</View>
 							))}
 						</View>
